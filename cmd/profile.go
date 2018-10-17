@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path"
 
@@ -61,7 +62,7 @@ func (c *cmdProfileExport) Command() *cobra.Command {
 	cmd.Use = "export"
 	cmd.Short = "Export profiles"
 	cmd.RunE = c.Run
-	cmd.PersistentFlags().StringVarP(&c.dir, "dir", "d", "./", "export directory")
+	cmd.PersistentFlags().StringVarP(&c.dir, "dir", "d", "", "export directory")
 
 	return cmd
 }
@@ -81,6 +82,9 @@ func (c *cmdProfileExport) ExportProfile(server lxd.ContainerServer, name string
 }
 
 func (c *cmdProfileExport) Run(cmd *cobra.Command, names []string) error {
+	if c.dir == "" {
+		return errors.New("missing export dir")
+	}
 	server, err := GetServer()
 	if err != nil {
 		return err
