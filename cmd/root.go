@@ -18,27 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lxc/lxd/client"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"melato.org/lxdtool/op"
 )
 
 var cfgFile string
-var socketPath string
-var server lxd.ContainerServer
-
-func GetServer() (lxd.ContainerServer, error) {
-	if server == nil {
-		// Connect to LXD over the Unix socket
-		var err error
-		server, err = lxd.ConnectLXDUnix(socketPath, nil)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return server, nil
-}
+var tool op.Tool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -60,7 +47,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&socketPath, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
+	rootCmd.PersistentFlags().StringVarP(&tool.SocketPath, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,

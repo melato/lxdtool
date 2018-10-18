@@ -15,79 +15,42 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/lxc/lxd/client"
-	"github.com/lxc/lxd/shared/api"
 	"github.com/spf13/cobra"
+	"melato.org/lxdtool/op"
 )
 
-type cmdSnap struct {
-	prefix string
-	dryRun bool
-	all    bool
-}
-
-func (c *cmdSnap) Command() *cobra.Command {
+func SnapCommand(c *op.Snap) *cobra.Command {
 	cmd := &cobra.Command{}
 	cmd.Use = "snap"
 	cmd.Short = "Bulk snapshot operations"
-	cmd.Run = func(cmd *cobra.Command, args []string) {
-		fmt.Println("snap")
-	}
-	cmd.PersistentFlags().StringVarP(&c.prefix, "prefix", "", "auto", "snapshot prefix")
-	cmd.PersistentFlags().BoolVarP(&c.dryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
-	cmd.PersistentFlags().BoolVarP(&c.all, "all", "a", false, "snapshot all running containers")
+	cmd.PersistentFlags().StringVarP(&c.Prefix, "prefix", "p", "auto", "snapshot prefix")
+	cmd.PersistentFlags().BoolVarP(&c.DryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
+	cmd.PersistentFlags().BoolVarP(&c.All, "all", "a", false, "snapshot all running containers")
 	return cmd
 }
 
-func (c *cmdSnap) GetContainerNames(args []string) ([]string, error) {
-	if c.all {
-		var names []string
-		containers, err := server.GetContainers()
-		if err != nil {
-			return nil, err
-		}
-		for _, container := range containers {
-			if container.IsActive() {
-				names = append(names, container.Name)
-			}
-		}
-		return names, nil
-	} else {
-		return args, nil
-	}
-}
-
-type cmdSnapCreate struct {
-	cmdSnap      *cmdSnap
-	periodString string
-	period       int
-	count        int
-}
-
-func (c *cmdSnapCreate) getPeriod() int {
-	p, err := parsePeriod(c.periodString)
-	if err != nil {
-		p = 2
-	}
-	return p
-}
-
-func (c *cmdSnapCreate) Command(cmdSnap *cmdSnap) *cobra.Command {
+func CreateCommand(c *op.SnapCreate, opSnap *op.Snap) *cobra.Command {
 	cmd := &cobra.Command{}
-	c.cmdSnap = cmdSnap
-	cmd.Use = "create"
+	c.Snap = opSnap
+	cmd.Use = "create [flags] [containers]"
 	cmd.Short = "Create automatic snapshots"
-	cmd.RunE = c.Run
-	cmd.Flags().StringVarP(&c.periodString, "period", "", "1s", `period in seconds, or minutes, hours, days, according to the suffix (s, m, h, d)
+	cmd.Long = `Creates snapshots for specified containers, using a rotating naming scheme.
+The snapshot names are determined by the appending a numeric suffix to the {prefix},
+The suffix is determined by {period}, {count}, and the current time,
+so that if the command is executed periodically every {period}, there would be {count} different snapshots.
+Any previous snapshot with the same name is deleted.
+The command is meant to be run periodically, at the same frequency as specified in the {period}.`
+	cmd.Example = `lxdtool snap create my-container
+lxdtool snap create -a --period 1h --count 24 --prefix auto_hour
+lxdtool snap create -a --period 1d --count 7 --prefix auto_day
+lxdtool snap create -a --period 7d --count 4 --prefix auto_week`
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return c.Run(args)
+	}
+	cmd.Flags().StringVarP(&c.PeriodString, "period", "", "1s", `period in seconds, or minutes, hours, days, according to the suffix (s, m, h, d)
 examples: 1h 1d`)
-	cmd.Flags().IntVarP(&c.count, "count", "n", 2, "number of snapshots to keep")
+	cmd.Flags().IntVarP(&c.Count, "count", "n", 0, "number of snapshots to keep.  0 means use no prefix")
 	return cmd
 }
 
@@ -98,125 +61,28 @@ func wait(op lxd.Operation, err error) error {
 	return err
 }
 
-func parsePeriod(period string) (int, error) {
-	re := regexp.MustCompile("([0-9]+)(.*)")
-	parts := re.FindStringSubmatch(period)
-
-	if parts != nil {
-		n, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return 0, err
-		}
-		suffix := parts[2]
-		if suffix == "s" || suffix == "" {
-			return n, nil
-		} else if suffix == "m" {
-			return n * 60, nil
-		} else if suffix == "h" {
-			return n * 3600, nil
-		} else if suffix == "d" {
-			return n * 3600 * 24, nil
-		} else {
-			return 0, errors.New("unknown suffix: " + suffix)
-		}
-	}
-	return 0, errors.New("invalid period: " + period)
-}
-
-func (c *cmdSnapCreate) Run(cmd *cobra.Command, args []string) error {
-	fmt.Println("snap create")
-	server, err := GetServer()
-	if err != nil {
-		return err
-	}
-	names, err := c.cmdSnap.GetContainerNames(args)
-	if err != nil {
-		return err
-	}
-
-	now := time.Now()
-	n := (now.Unix() / int64(c.getPeriod())) % int64(c.count)
-
-	snapshot := api.ContainerSnapshotsPost{
-		Name: c.cmdSnap.prefix + strconv.Itoa(int(n)),
-	}
-
-	if c.cmdSnap.dryRun {
-		fmt.Println("snapshot name:", snapshot.Name)
-	}
-
-	for _, name := range names {
-		fmt.Println(name)
-		if c.cmdSnap.dryRun {
-			fmt.Println(name)
-		} else {
-			err := wait(server.DeleteContainerSnapshot(name, snapshot.Name))
-			if err != nil && "not found" != err.Error() {
-				return err
-			}
-			err = wait(server.CreateContainerSnapshot(name, snapshot))
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-type cmdSnapDelete struct {
-	cmdSnap *cmdSnap
-}
-
-func (c *cmdSnapDelete) Command(cmdSnap *cmdSnap) *cobra.Command {
+func DeleteCommand(c *op.SnapDelete, opSnap *op.Snap) *cobra.Command {
 	cmd := &cobra.Command{}
-	c.cmdSnap = cmdSnap
+	c.Snap = opSnap
 	cmd.Use = "delete"
 	cmd.Short = "Delete automatic snapshots"
-	cmd.RunE = c.Run
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return c.Run(args)
+	}
 	return cmd
 }
 
-func (c *cmdSnapDelete) Run(cmd *cobra.Command, args []string) error {
-	server, err := GetServer()
-	if err != nil {
-		return err
-	}
-	names, err := c.cmdSnap.GetContainerNames(args)
-	if err != nil {
-		return err
-	}
-	for _, name := range names {
-		snapshots, err := server.GetContainerSnapshotNames(name)
-		if err != nil {
-			return err
-		}
-		for _, snap := range snapshots {
-			if strings.HasPrefix(snap, c.cmdSnap.prefix) {
-				fmt.Println(name + "/" + snap)
-				if !c.cmdSnap.dryRun {
-					err := wait(server.DeleteContainerSnapshot(name, snap))
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func init() {
-	fmt.Println("snap.init")
-	var snap = cmdSnap{}
-	var snapCmd = snap.Command()
+	var snap = &op.Snap{}
+	snap.Tool = &tool
+	var snapCmd = SnapCommand(snap)
 	rootCmd.AddCommand(snapCmd)
 
-	var snapCreate cmdSnapCreate
-	snapCreate.cmdSnap = &snap
-	snapCmd.AddCommand(snapCreate.Command(&snap))
+	var snapCreate = &op.SnapCreate{}
+	snapCreate.Snap = snap
+	snapCmd.AddCommand(CreateCommand(snapCreate, snap))
 
-	var snapDelete cmdSnapDelete
-	snapDelete.cmdSnap = &snap
-	snapCmd.AddCommand(snapDelete.Command(&snap))
+	var snapDelete = &op.SnapDelete{}
+	snapDelete.Snap = snap
+	snapCmd.AddCommand(DeleteCommand(snapDelete, snap))
 }

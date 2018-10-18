@@ -15,15 +15,10 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"path"
 
-	"io/ioutil"
-
-	"github.com/lxc/lxd/client"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"melato.org/lxdtool/op"
 )
 
 // profileCmd represents the profile command
@@ -35,88 +30,30 @@ var profileCmd = &cobra.Command{
 	},
 }
 
-func ListProfiles() {
-	server, err := GetServer()
-	names, err := server.GetProfileNames()
-	if err == nil {
-		for _, name := range names {
-			fmt.Println(name)
-		}
-	}
-}
-
-type cmdProfileExport struct {
-	dir string
-}
-
-func (c *cmdProfileExport) Command() *cobra.Command {
+func profileExportCommand(c *op.ProfileExport) *cobra.Command {
 	cmd := &cobra.Command{}
 	cmd.Use = "export"
 	cmd.Short = "Export profiles"
-	cmd.RunE = c.Run
-	cmd.PersistentFlags().StringVarP(&c.dir, "dir", "d", "", "export directory")
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return c.Run(args)
+	}
+	cmd.PersistentFlags().StringVarP(&c.Dir, "dir", "d", "", "export directory")
 
 	return cmd
 }
 
-func (c *cmdProfileExport) ExportProfile(server lxd.ContainerServer, name string) error {
-	profile, _, err := server.GetProfile(name)
-	if err != nil {
-		return err
-	}
-
-	data, err := yaml.Marshal(&profile)
-	if err != nil {
-		return err
-	}
-
-	return ioutil.WriteFile(path.Join(c.dir, name), []byte(data), 0644)
-}
-
-func (c *cmdProfileExport) Run(cmd *cobra.Command, names []string) error {
-	if c.dir == "" {
-		return errors.New("missing export dir")
-	}
-	server, err := GetServer()
-	if err != nil {
-		return err
-	}
-	if len(names) == 0 {
-		names, err = server.GetProfileNames()
-		if err != nil {
-			return err
-		}
-	}
-	for _, name := range names {
-		fmt.Println(name)
-		err = c.ExportProfile(server, name)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func init() {
-	fmt.Println("profile.init")
+	var opProfile = op.Profile{&tool}
 	rootCmd.AddCommand(profileCmd)
 
 	var listCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List profile names",
 		Run: func(cmd *cobra.Command, args []string) {
-			ListProfiles()
+			opProfile.List()
 		},
 	}
-
 	profileCmd.AddCommand(listCmd)
-	var export = cmdProfileExport{}
-	profileCmd.AddCommand(export.Command())
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// profileCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// profileCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	var opExport = &op.ProfileExport{}
+	profileCmd.AddCommand(profileExportCommand(opExport))
 }
