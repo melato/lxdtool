@@ -29,19 +29,11 @@ import (
 // profileCmd represents the profile command
 var profileCmd = &cobra.Command{
 	Use:   "profile",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "profile export, etc.",
 	Run: func(cmd *cobra.Command, args []string) {
-		ListProfiles()
+		fmt.Println("profile run")
 	},
 }
-
-var dir string
 
 func ListProfiles() {
 	server, err := GetServer()
@@ -106,6 +98,7 @@ func (c *cmdProfileExport) Run(cmd *cobra.Command, names []string) error {
 }
 
 func init() {
+	fmt.Println("profile.init")
 	rootCmd.AddCommand(profileCmd)
 
 	var listCmd = &cobra.Command{
