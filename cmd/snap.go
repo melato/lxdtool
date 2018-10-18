@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lxc/lxd/client"
@@ -43,6 +44,24 @@ func (c *cmdSnap) Command() *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&c.dryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
 	cmd.PersistentFlags().BoolVarP(&c.all, "all", "a", false, "snapshot all running containers")
 	return cmd
+}
+
+func (c *cmdSnap) GetContainerNames(args []string) ([]string, error) {
+	if c.all {
+		var names []string
+		containers, err := server.GetContainers()
+		if err != nil {
+			return nil, err
+		}
+		for _, container := range containers {
+			if container.IsActive() {
+				names = append(names, container.Name)
+			}
+		}
+		return names, nil
+	} else {
+		return args, nil
+	}
 }
 
 type cmdSnapCreate struct {
@@ -110,19 +129,9 @@ func (c *cmdSnapCreate) Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	var names []string
-	if c.cmdSnap.all {
-		containers, err := server.GetContainers()
-		if err != nil {
-			return err
-		}
-		for _, container := range containers {
-			if container.IsActive() {
-				names = append(names, container.Name)
-			}
-		}
-	} else {
-		names = args
+	names, err := c.cmdSnap.GetContainerNames(args)
+	if err != nil {
+		return err
 	}
 
 	now := time.Now()
@@ -154,6 +163,49 @@ func (c *cmdSnapCreate) Run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+type cmdSnapDelete struct {
+	cmdSnap *cmdSnap
+}
+
+func (c *cmdSnapDelete) Command(cmdSnap *cmdSnap) *cobra.Command {
+	cmd := &cobra.Command{}
+	c.cmdSnap = cmdSnap
+	cmd.Use = "delete"
+	cmd.Short = "Delete automatic snapshots"
+	cmd.RunE = c.Run
+	return cmd
+}
+
+func (c *cmdSnapDelete) Run(cmd *cobra.Command, args []string) error {
+	server, err := GetServer()
+	if err != nil {
+		return err
+	}
+	names, err := c.cmdSnap.GetContainerNames(args)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		snapshots, err := server.GetContainerSnapshotNames(name)
+		if err != nil {
+			return err
+		}
+		for _, snap := range snapshots {
+			if strings.HasPrefix(snap, c.cmdSnap.prefix) {
+				fmt.Println(name + "/" + snap)
+				if !c.cmdSnap.dryRun {
+					err := wait(server.DeleteContainerSnapshot(name, snap))
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func init() {
 	fmt.Println("snap.init")
 	var snap = cmdSnap{}
@@ -163,4 +215,8 @@ func init() {
 	var snapCreate cmdSnapCreate
 	snapCreate.cmdSnap = &snap
 	snapCmd.AddCommand(snapCreate.Command(&snap))
+
+	var snapDelete cmdSnapDelete
+	snapDelete.cmdSnap = &snap
+	snapCmd.AddCommand(snapDelete.Command(&snap))
 }
