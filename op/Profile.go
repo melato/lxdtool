@@ -46,8 +46,9 @@ func (p *Profile) List() error {
 }
 
 type ProfileExport struct {
-	Tool *Tool
-	Dir  string
+	Tool          *Tool
+	Dir           string
+	IncludeUsedBy bool
 }
 
 func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) error {
@@ -56,6 +57,9 @@ func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) e
 		return err
 	}
 
+	if !c.IncludeUsedBy {
+		profile.UsedBy = nil
+	}
 	data, err := yaml.Marshal(&profile)
 	if err != nil {
 		return err
