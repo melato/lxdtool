@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/lxc/lxd/client"
 	"github.com/spf13/cobra"
 	"melato.org/lxdtool/op"
 )
@@ -26,7 +25,6 @@ func SnapCommand(c *op.Snap) *cobra.Command {
 	cmd.Short = "Bulk snapshot operations"
 	cmd.PersistentFlags().StringVarP(&c.Prefix, "prefix", "p", "auto", "snapshot prefix")
 	cmd.PersistentFlags().BoolVarP(&c.DryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
-	cmd.PersistentFlags().BoolVarP(&c.All, "all", "a", false, "snapshot all running containers")
 	return cmd
 }
 
@@ -37,8 +35,9 @@ func CreateCommand(c *op.SnapCreate, opSnap *op.Snap) *cobra.Command {
 	cmd.Short = "Create automatic snapshots"
 	cmd.Long = `Creates snapshots for specified containers, using a rotating naming scheme.
 The snapshot names are determined by the appending a numeric suffix to the {prefix},
-The suffix is determined by {period}, {count}, and the current time,
-so that if the command is executed periodically every {period}, there would be {count} different snapshots.
+representing the current time {period} modulo {count},
+so that if the command is executed periodically every {period},
+there would be {count} different snapshots.
 Any previous snapshot with the same name is deleted.
 The command is meant to be run periodically, at the same frequency as specified in the {period}.`
 	cmd.Example = `lxdtool snap create my-container
@@ -52,13 +51,6 @@ lxdtool snap create -a --period 7d --count 4 --prefix auto_week`
 examples: 1h 1d`)
 	cmd.Flags().IntVarP(&c.Count, "count", "n", 0, "number of snapshots to keep.  0 means use no prefix")
 	return cmd
-}
-
-func wait(op lxd.Operation, err error) error {
-	if err == nil {
-		return op.Wait()
-	}
-	return err
 }
 
 func DeleteCommand(c *op.SnapDelete, opSnap *op.Snap) *cobra.Command {

@@ -38,7 +38,7 @@ func profileExportCommand(c *op.ProfileExport) *cobra.Command {
 		return c.Run(args)
 	}
 	cmd.PersistentFlags().StringVarP(&c.Dir, "dir", "d", "", "export directory")
-
+	cmd.MarkFlagRequired("dir")
 	return cmd
 }
 
@@ -55,5 +55,6 @@ func init() {
 	}
 	profileCmd.AddCommand(listCmd)
 	var opExport = &op.ProfileExport{}
+	opExport.Tool = &tool
 	profileCmd.AddCommand(profileExportCommand(opExport))
 }

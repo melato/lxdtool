@@ -30,29 +30,6 @@ type Snap struct {
 	Tool   *Tool
 	Prefix string
 	DryRun bool
-	All    bool
-}
-
-func (c *Snap) GetContainerNames(args []string) ([]string, error) {
-	if c.All {
-		var names []string
-		server, err := c.Tool.GetServer()
-		if err != nil {
-			return nil, err
-		}
-		containers, err := server.GetContainers()
-		if err != nil {
-			return nil, err
-		}
-		for _, container := range containers {
-			if container.IsActive() {
-				names = append(names, container.Name)
-			}
-		}
-		return names, nil
-	} else {
-		return args, nil
-	}
 }
 
 type SnapCreate struct {
@@ -108,7 +85,7 @@ func (c *SnapCreate) Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	names, err := c.Snap.GetContainerNames(args)
+	names, err := c.Snap.Tool.GetContainerNames(args)
 	if err != nil {
 		return err
 	}
@@ -155,7 +132,7 @@ func (c *SnapDelete) Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	names, err := c.Snap.GetContainerNames(args)
+	names, err := c.Snap.Tool.GetContainerNames(args)
 	if err != nil {
 		return err
 	}
