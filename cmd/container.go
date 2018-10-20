@@ -46,4 +46,18 @@ func init() {
 		tool.ListContainerProfiles(args)
 	}
 	containerCmd.AddCommand(profilesCmd)
+
+	addressesCmd := &cobra.Command{}
+	addressesCmd.Use = "addresses"
+	addressesCmd.Run = func(cmd *cobra.Command, args []string) {
+		tool.ListContainerAddresses(args)
+	}
+	containerCmd.AddCommand(addressesCmd)
+
+	ip4Cmd := &cobra.Command{}
+	ip4Cmd.Use = "ip4"
+	ip4Cmd.Run = func(cmd *cobra.Command, args []string) {
+		tool.ListContainerAddressesIP4(args)
+	}
+	containerCmd.AddCommand(ip4Cmd)
 }
