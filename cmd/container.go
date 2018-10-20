@@ -29,5 +29,21 @@ func ContainerCommand() *cobra.Command {
 }
 
 func init() {
-	rootCmd.AddCommand(ContainerCommand())
+	containerCmd := &cobra.Command{}
+	containerCmd.Use = "container"
+	rootCmd.AddCommand(containerCmd)
+
+	listCmd := &cobra.Command{}
+	listCmd.Use = "container"
+	listCmd.Run = func(cmd *cobra.Command, args []string) {
+		tool.ListContainers(args)
+	}
+	containerCmd.AddCommand(listCmd)
+
+	profilesCmd := &cobra.Command{}
+	profilesCmd.Use = "profiles"
+	profilesCmd.Run = func(cmd *cobra.Command, args []string) {
+		tool.ListContainerProfiles(args)
+	}
+	containerCmd.AddCommand(profilesCmd)
 }

@@ -56,3 +56,24 @@ func (c *Tool) ListContainers(args []string) error {
 	}
 	return nil
 }
+
+func (t *Tool) ListContainerProfiles(args []string) error {
+	containers, err := t.GetContainerNames(args)
+	if err != nil {
+		return err
+	}
+	server, err := t.GetServer()
+	if err != nil {
+		return err
+	}
+	for _, name := range containers {
+		c, _, err := server.GetContainer(name)
+		if err != nil {
+			return err
+		}
+		for _, profile := range c.Profiles {
+			fmt.Println(name, profile)
+		}
+	}
+	return nil
+}
