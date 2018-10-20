@@ -100,7 +100,7 @@ func (t *Tool) ListContainerAddressesF(args []string, includeNetworkName bool, f
 					if includeNetworkName {
 						fmt.Println(name, networkName, x)
 					} else {
-						fmt.Println(name, x)
+						fmt.Println(x, name)
 					}
 				}
 			}
