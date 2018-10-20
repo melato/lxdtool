@@ -34,7 +34,7 @@ func init() {
 	rootCmd.AddCommand(containerCmd)
 
 	listCmd := &cobra.Command{}
-	listCmd.Use = "container"
+	listCmd.Use = "list"
 	listCmd.Run = func(cmd *cobra.Command, args []string) {
 		tool.ListContainers(args)
 	}
