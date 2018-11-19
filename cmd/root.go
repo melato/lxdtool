@@ -45,6 +45,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
 	rootCmd.PersistentFlags().StringVarP(&tool.SocketPath, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
+	rootCmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
+	rootCmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
 }

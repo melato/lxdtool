@@ -11,6 +11,7 @@ type Tool struct {
 	SocketPath string
 	server     lxd.ContainerServer
 	All        bool
+	Exclude    []string
 }
 
 func (c *Tool) GetServer() (lxd.ContainerServer, error) {
@@ -25,9 +26,26 @@ func (c *Tool) GetServer() (lxd.ContainerServer, error) {
 	return c.server, nil
 }
 
+func StringSliceDiff(ar []string, exclude []string) []string {
+	if exclude == nil {
+		return ar
+	}
+	var xmap = make(map[string]bool)
+	for _, s := range exclude {
+		xmap[s] = true
+	}
+	var result []string
+	for _, s := range ar {
+		if !xmap[s] {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
 func (c *Tool) GetContainerNames(args []string) ([]string, error) {
+	var names []string
 	if c.All {
-		var names []string
 		server, err := c.GetServer()
 		if err != nil {
 			return nil, err
@@ -41,10 +59,10 @@ func (c *Tool) GetContainerNames(args []string) ([]string, error) {
 				names = append(names, container.Name)
 			}
 		}
-		return names, nil
 	} else {
-		return args, nil
+		names = args
 	}
+	return StringSliceDiff(names, c.Exclude), nil
 }
 
 func (c *Tool) ListContainers(args []string) error {
@@ -121,4 +139,23 @@ func (t *Tool) ListContainerAddressesIP4(args []string) error {
 		}
 		return nil
 	})
+}
+
+func (t *Tool) ListContainerPids(args []string) error {
+	containers, err := t.GetContainerNames(args)
+	if err != nil {
+		return err
+	}
+	server, err := t.GetServer()
+	if err != nil {
+		return err
+	}
+	for _, name := range containers {
+		state, _, err := server.GetContainerState(name)
+		if err != nil {
+			return err
+		}
+		fmt.Println(name, state.Pid)
+	}
+	return nil
 }
