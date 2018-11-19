@@ -68,4 +68,12 @@ func init() {
 		tool.ListContainerPids(args)
 	}
 	containerCmd.AddCommand(pidCmd)
+
+	findCmd := &cobra.Command{}
+	findCmd.Use = "find"
+	findCmd.Run = func(cmd *cobra.Command, args []string) {
+		tool.FindPids(args)
+	}
+	containerCmd.AddCommand(findCmd)
+
 }
