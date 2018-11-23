@@ -22,9 +22,9 @@ import (
 	"os"
 	"path"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/lxc/lxd/client"
+	"github.com/lxc/lxd/shared/api"
+	"gopkg.in/yaml.v2"
 )
 
 type Profile struct {
@@ -135,6 +135,33 @@ func (c *ProfileExport) Run(names []string) error {
 	fmt.Println("file:", c.ContainerProfilesFile)
 	if c.ContainerProfilesFile != "" {
 		err := c.ExportProfileAssociations()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ImportProfile(tool *Tool, file string) error {
+	server, err := tool.GetServer()
+	if err != nil {
+		return err
+	}
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	var profile = api.Profile{}
+	err = yaml.Unmarshal(data, &profile)
+	if err != nil {
+		return err
+	}
+	return server.UpdateProfile(profile.Name, profile.ProfilePut, "")
+}
+
+func ImportProfiles(tool *Tool, files []string) error {
+	for _, file := range files {
+		err := ImportProfile(tool, file)
 		if err != nil {
 			return err
 		}

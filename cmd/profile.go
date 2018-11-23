@@ -43,6 +43,16 @@ func profileExportCommand(c *op.ProfileExport) *cobra.Command {
 	return cmd
 }
 
+func profileImportCommand() *cobra.Command {
+	cmd := &cobra.Command{}
+	cmd.Use = "import"
+	cmd.Short = "Import profiles"
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		return op.ImportProfiles(&tool, args)
+	}
+	return cmd
+}
+
 func init() {
 	var opProfile = op.Profile{&tool}
 	rootCmd.AddCommand(profileCmd)
@@ -58,4 +68,5 @@ func init() {
 	var opExport = &op.ProfileExport{}
 	opExport.Tool = &tool
 	profileCmd.AddCommand(profileExportCommand(opExport))
+	profileCmd.AddCommand(profileImportCommand())
 }
