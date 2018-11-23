@@ -67,13 +67,12 @@ func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) e
 		return err
 	}
 
-	return ioutil.WriteFile(path.Join(c.Dir, name), []byte(data), 0644)
+	file := path.Join(c.Dir, name)
+	fmt.Println("file", file)
+	return ioutil.WriteFile(file, []byte(data), 0644)
 }
 
 func (c *ProfileExport) ExportProfiles(names []string) error {
-	if c.Dir == "" {
-		return errors.New("missing export dir")
-	}
 	server, err := c.Tool.GetServer()
 	if err != nil {
 		return err
@@ -126,18 +125,15 @@ func (t *ProfileExport) ExportProfileAssociations() error {
 }
 
 func (c *ProfileExport) Run(names []string) error {
-	if c.Dir != "" {
-		err := c.ExportProfiles(names)
-		if err != nil {
-			return err
-		}
-	}
-	fmt.Println("file:", c.ContainerProfilesFile)
 	if c.ContainerProfilesFile != "" {
 		err := c.ExportProfileAssociations()
 		if err != nil {
 			return err
 		}
+	}
+	err := c.ExportProfiles(names)
+	if err != nil {
+		return err
 	}
 	return nil
 }
