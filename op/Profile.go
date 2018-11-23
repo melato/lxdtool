@@ -47,10 +47,11 @@ func (p *Profile) List() error {
 }
 
 type ProfileExport struct {
-	Tool                  *Tool
-	Dir                   string
-	ContainerProfilesFile string
-	IncludeUsedBy         bool
+	Tool          *Tool
+	File          string
+	Dir           string
+	All           bool
+	IncludeUsedBy bool
 }
 
 func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) error {
@@ -68,7 +69,6 @@ func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) e
 	}
 
 	file := path.Join(c.Dir, name)
-	fmt.Println("file", file)
 	return ioutil.WriteFile(file, []byte(data), 0644)
 }
 
@@ -77,14 +77,13 @@ func (c *ProfileExport) ExportProfiles(names []string) error {
 	if err != nil {
 		return err
 	}
-	if len(names) == 0 {
+	if len(names) == 0 && c.All {
 		names, err = server.GetProfileNames()
 		if err != nil {
 			return err
 		}
 	}
 	for _, name := range names {
-		fmt.Println(name)
 		err = c.ExportProfile(server, name)
 		if err != nil {
 			return err
@@ -94,7 +93,7 @@ func (c *ProfileExport) ExportProfiles(names []string) error {
 }
 
 func (t *ProfileExport) ExportProfileAssociations() error {
-	if t.ContainerProfilesFile == "" {
+	if t.File == "" {
 		return errors.New("missing export file")
 	}
 	server, err := t.Tool.GetServer()
@@ -105,7 +104,7 @@ func (t *ProfileExport) ExportProfileAssociations() error {
 	if err != nil {
 		return err
 	}
-	f, err := os.Create(t.ContainerProfilesFile)
+	f, err := os.Create(t.File)
 	if err != nil {
 		return err
 	}
@@ -125,7 +124,7 @@ func (t *ProfileExport) ExportProfileAssociations() error {
 }
 
 func (c *ProfileExport) Run(names []string) error {
-	if c.ContainerProfilesFile != "" {
+	if c.File != "" {
 		err := c.ExportProfileAssociations()
 		if err != nil {
 			return err
