@@ -15,11 +15,12 @@
 package op
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
-	"path"
-
 	"io/ioutil"
+	"os"
+	"path"
 
 	"gopkg.in/yaml.v2"
 
@@ -46,9 +47,10 @@ func (p *Profile) List() error {
 }
 
 type ProfileExport struct {
-	Tool          *Tool
-	Dir           string
-	IncludeUsedBy bool
+	Tool                  *Tool
+	Dir                   string
+	ContainerProfilesFile string
+	IncludeUsedBy         bool
 }
 
 func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) error {
@@ -68,7 +70,7 @@ func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) e
 	return ioutil.WriteFile(path.Join(c.Dir, name), []byte(data), 0644)
 }
 
-func (c *ProfileExport) Run(names []string) error {
+func (c *ProfileExport) ExportProfiles(names []string) error {
 	if c.Dir == "" {
 		return errors.New("missing export dir")
 	}
@@ -85,6 +87,54 @@ func (c *ProfileExport) Run(names []string) error {
 	for _, name := range names {
 		fmt.Println(name)
 		err = c.ExportProfile(server, name)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *ProfileExport) ExportProfileAssociations() error {
+	if t.ContainerProfilesFile == "" {
+		return errors.New("missing export file")
+	}
+	server, err := t.Tool.GetServer()
+	if err != nil {
+		return err
+	}
+	containers, err := server.GetContainers()
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(t.ContainerProfilesFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	cs := csv.NewWriter(f)
+	defer cs.Flush()
+	var row = []string{"container", "profile"}
+	cs.Write(row)
+	for _, container := range containers {
+		row[0] = container.Name
+		for _, profile := range container.Profiles {
+			row[1] = profile
+			cs.Write(row)
+		}
+	}
+	return nil
+}
+
+func (c *ProfileExport) Run(names []string) error {
+	if c.Dir != "" {
+		err := c.ExportProfiles(names)
+		if err != nil {
+			return err
+		}
+	}
+	fmt.Println("file:", c.ContainerProfilesFile)
+	if c.ContainerProfilesFile != "" {
+		err := c.ExportProfileAssociations()
 		if err != nil {
 			return err
 		}

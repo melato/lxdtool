@@ -28,16 +28,21 @@ func ContainerCommand() *cobra.Command {
 	return cmd
 }
 
-func init() {
-	containerCmd := &cobra.Command{}
-	containerCmd.Use = "container"
-	rootCmd.AddCommand(containerCmd)
-
+func ListCommand() *cobra.Command {
 	listCmd := &cobra.Command{}
 	listCmd.Use = "list"
 	listCmd.Run = func(cmd *cobra.Command, args []string) {
 		tool.ListContainers(args)
 	}
+	return listCmd
+}
+
+func init() {
+	containerCmd := &cobra.Command{}
+	containerCmd.Use = "container"
+	rootCmd.AddCommand(containerCmd)
+
+	listCmd := ListCommand()
 	containerCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(listCmd)
 

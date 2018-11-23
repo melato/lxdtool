@@ -38,8 +38,8 @@ func profileExportCommand(c *op.ProfileExport) *cobra.Command {
 		return c.Run(args)
 	}
 	cmd.PersistentFlags().StringVarP(&c.Dir, "dir", "d", "", "export directory")
+	cmd.PersistentFlags().StringVarP(&c.ContainerProfilesFile, "file", "f", "", "container-profile csv file")
 	cmd.PersistentFlags().BoolVarP(&c.IncludeUsedBy, "used-by", "u", false, "include used-by")
-	cmd.MarkFlagRequired("dir")
 	return cmd
 }
 
