@@ -46,8 +46,8 @@ func profileExportCommand(c *op.ProfileExport) *cobra.Command {
 
 func profileImportCommand() *cobra.Command {
 	cmd := &cobra.Command{}
-	cmd.Use = "update"
-	cmd.Short = "Update profiles"
+	cmd.Use = "import"
+	cmd.Short = "Create or Update profiles"
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return op.ImportProfiles(&tool, args)
 	}

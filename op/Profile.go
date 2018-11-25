@@ -137,6 +137,19 @@ func (c *ProfileExport) Run(names []string) error {
 	return nil
 }
 
+func ProfileExists(server lxd.ContainerServer, name string) (bool, error) {
+	names, err := server.GetProfileNames()
+	if err != nil {
+		return false, err
+	}
+	for _, profile := range names {
+		if profile == name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func ImportProfile(tool *Tool, file string) error {
 	server, err := tool.GetServer()
 	if err != nil {
@@ -151,7 +164,19 @@ func ImportProfile(tool *Tool, file string) error {
 	if err != nil {
 		return err
 	}
-	return server.UpdateProfile(profile.Name, profile.ProfilePut, "")
+	name := profile.Name
+	exists, err := ProfileExists(server, name)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return server.UpdateProfile(profile.Name, profile.ProfilePut, "")
+	} else {
+		var post api.ProfilesPost
+		post.ProfilePut = profile.ProfilePut
+		post.Name = name
+		return server.CreateProfile(post)
+	}
 }
 
 func ImportProfiles(tool *Tool, files []string) error {
