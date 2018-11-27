@@ -171,7 +171,9 @@ func (t *SnapServer) Create(w http.ResponseWriter, r *http.Request) (map[string]
 
 func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	vars := mux.Vars(r)
-	snapshot := vars["snapshot"]
+	snapshots := strings.Split(vars["snapshots"], ",")
+	body := make(map[string]interface{})
+	body["snapshots"] = snapshots
 
 	var err error
 	server, err := t.Server.GetServer()
@@ -183,13 +185,15 @@ func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) (map[string]
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("delete", container, snapshot)
-	err = wait(server.DeleteContainerSnapshot(container, snapshot))
-	if err != nil && "not found" != err.Error() {
-		return nil, err
+	for _, snapshot := range snapshots {
+		if snapshot != "" {
+			fmt.Println("delete", container, snapshot)
+			err = wait(server.DeleteContainerSnapshot(container, snapshot))
+			if err != nil && "not found" != err.Error() {
+				return nil, err
+			}
+		}
 	}
-	body := make(map[string]interface{})
-	body["snapshot"] = snapshot
 	return body, nil
 }
 
@@ -198,7 +202,7 @@ func (t *SnapServer) Run() error {
 	r.HandleFunc("/1.0/id", t.handler((*SnapServer).Id))
 	r.HandleFunc("/1.0/list", t.handler((*SnapServer).List))
 	r.HandleFunc("/1.0/create/{snapshot}", t.handler((*SnapServer).Create))
-	r.HandleFunc("/1.0/delete/{snapshot}", t.handler((*SnapServer).Delete))
+	r.HandleFunc("/1.0/delete/{snapshots}", t.handler((*SnapServer).Delete))
 
 	fmt.Println("starting http server at:", t.Addr)
 	err := http.ListenAndServe(t.Addr, r)
