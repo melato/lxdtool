@@ -45,7 +45,9 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&tool.SocketPath, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
+	rootCmd.PersistentFlags().StringVarP(&tool.ServerSocket, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
+	rootCmd.PersistentFlags().StringVarP(&tool.ServerRemote, "remote", "r", "", "LXD remote")
+	rootCmd.PersistentFlags().StringVarP(&tool.ConfigDir, "config", "c", "", "config dir (with client.crt, client.key)")
 	rootCmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
 	rootCmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
 }

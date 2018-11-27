@@ -2,28 +2,68 @@ package op
 
 import (
 	"fmt"
+	"os"
+	"path"
 
 	"github.com/lxc/lxd/client"
+	"github.com/lxc/lxd/lxc/config"
 	"github.com/lxc/lxd/shared/api"
 )
 
 type Tool struct {
-	SocketPath string
-	server     lxd.ContainerServer
-	All        bool
-	Exclude    []string
+	ServerSocket string
+	ServerRemote string
+	ConfigDir    string
+	server       lxd.ContainerServer
+	All          bool
+	Exclude      []string
 }
 
-func (c *Tool) GetServer() (lxd.ContainerServer, error) {
-	if c.server == nil {
-		// Connect to LXD over the Unix socket
+/*
+func (t *Tool) loadConfigFile(file string) (string, error) {
+	bytes, err := io.ioutil.ReadFile(path.Join(t.ConfigPath, file))
+	if err != nil {
+		return nil, err
+	}
+	return []string(bytes), nil
+}
+			// Connect to LXD over HTTPS
+			var args lxd.ConnectionArgs
+			args.TLSClientCert, err = loadConfigFile("client.crt")
+			if err != nil {
+				return nil, err
+			}
+			args.TLSClientKey, err = loadConfigFile("client.key")
+			if err != nil {
+				return nil, err
+			}
+			t.server, err = lxd.ConnectLXD(t.ServerUrl, t.ServerSocket, nil)
+*/
+
+func (t *Tool) GetServer() (lxd.ContainerServer, error) {
+	if t.server == nil {
 		var err error
-		c.server, err = lxd.ConnectLXDUnix(c.SocketPath, nil)
-		if err != nil {
-			return nil, err
+		if t.ServerRemote != "" && t.ConfigDir != "" {
+			fmt.Println("using remote: ", t.ServerRemote)
+			fmt.Println("ConfigDir: ", t.ConfigDir)
+			confPath := os.ExpandEnv(path.Join(t.ConfigDir, "config.yml"))
+			conf, err := config.LoadConfig(confPath)
+			if err != nil {
+				return nil, err
+			}
+			t.server, err = conf.GetContainerServer(t.ServerRemote)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			// Connect to LXD over the Unix socket
+			t.server, err = lxd.ConnectLXDUnix(t.ServerSocket, nil)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
-	return c.server, nil
+	return t.server, nil
 }
 
 func StringSliceDiff(ar []string, exclude []string) []string {
@@ -43,10 +83,10 @@ func StringSliceDiff(ar []string, exclude []string) []string {
 	return result
 }
 
-func (c *Tool) GetContainerNames(args []string) ([]string, error) {
+func (t *Tool) GetContainerNames(args []string) ([]string, error) {
 	var names []string
-	if c.All {
-		server, err := c.GetServer()
+	if t.All {
+		server, err := t.GetServer()
 		if err != nil {
 			return nil, err
 		}
@@ -62,11 +102,11 @@ func (c *Tool) GetContainerNames(args []string) ([]string, error) {
 	} else {
 		names = args
 	}
-	return StringSliceDiff(names, c.Exclude), nil
+	return StringSliceDiff(names, t.Exclude), nil
 }
 
-func (c *Tool) ListContainers(args []string) error {
-	names, err := c.GetContainerNames(args)
+func (t *Tool) ListContainers(args []string) error {
+	names, err := t.GetContainerNames(args)
 	if err != nil {
 		return err
 	}
@@ -86,11 +126,11 @@ func (t *Tool) ListContainerProfiles(args []string) error {
 		return err
 	}
 	for _, name := range containers {
-		c, _, err := server.GetContainer(name)
+		t, _, err := server.GetContainer(name)
 		if err != nil {
 			return err
 		}
-		for _, profile := range c.Profiles {
+		for _, profile := range t.Profiles {
 			fmt.Println(name, profile)
 		}
 	}
