@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -23,12 +24,7 @@ type SnapServer struct {
 	Addr   string
 }
 
-func (t *SnapServer) Error(w http.ResponseWriter, err error) {
-	fmt.Println(err)
-	http.Error(w, "Internal Error", 404)
-	return
-}
-
+/** Find the container name from its address */
 func (t *SnapServer) findContainerFromAddress(addr string) (string, error) {
 	fields := strings.Split(addr, ":")
 	ip := fields[0]
@@ -59,28 +55,47 @@ func (t *SnapServer) findContainerFromAddress(addr string) (string, error) {
 	return "", nil
 }
 
-func (t *SnapServer) Id(w http.ResponseWriter, r *http.Request) {
+func (t *SnapServer) Error(w http.ResponseWriter, err error) {
+	fmt.Println(err)
+	http.Error(w, "Internal Error", 404)
+	return
+}
+
+func (t *SnapServer) start(w http.ResponseWriter, r *http.Request) error {
 	if r.Method != "GET" {
-		http.Error(w, "Not implemented", 501)
-		return
+		return errors.New("Not implemented")
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
+	return nil
+}
 
+func (t *SnapServer) handler(method func(*SnapServer, http.ResponseWriter, *http.Request) (map[string]interface{}, error)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := t.start(w, r)
+		var body map[string]interface{}
+		if err == nil {
+			body, err = method(t, w, r)
+		}
+
+		if err == nil {
+			err = json.NewEncoder(w).Encode(body)
+			if err != nil {
+				err = errors.New("Internal server error")
+			}
+		}
+		if err != nil {
+			t.Error(w, err)
+		}
+	}
+}
+
+func (t *SnapServer) Id(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	body := make(map[string]interface{})
-
 	var err error
 	body["RemoteAddr"] = r.RemoteAddr
 	body["Name"], err = t.findContainerFromAddress(r.RemoteAddr)
-	if err != nil {
-		t.Error(w, err)
-		return
-	}
-	err = json.NewEncoder(w).Encode(body)
-	if err != nil {
-		http.Error(w, "Internal server error", 500)
-		return
-	}
+	return body, err
 }
 
 func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) {
@@ -214,7 +229,7 @@ func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) {
 
 func (t *SnapServer) Run() error {
 	r := mux.NewRouter()
-	r.HandleFunc("/1.0/id", func(w http.ResponseWriter, r *http.Request) { t.Id(w, r) })
+	r.HandleFunc("/1.0/id", t.handler((*SnapServer).Id))
 	r.HandleFunc("/1.0/list", func(w http.ResponseWriter, r *http.Request) { t.List(w, r) })
 	r.HandleFunc("/1.0/create/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Create(w, r) })
 	r.HandleFunc("/1.0/delete/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Delete(w, r) })
