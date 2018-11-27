@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/lxc/lxd/client"
+	"github.com/lxc/lxd/shared/api"
 	"github.com/spf13/cobra"
 	"melato.org/lxdtool/op"
 )
@@ -96,12 +98,13 @@ func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, err := t.findContainerFromAddress(r.RemoteAddr)
+	container, err := t.findContainerFromAddress(r.RemoteAddr)
 	if err != nil {
 		t.Error(w, err)
 		return
 	}
-	snapshots, err := server.GetContainerSnapshotNames(name)
+	fmt.Println("list", container)
+	snapshots, err := server.GetContainerSnapshotNames(container)
 	if err != nil {
 		t.Error(w, err)
 		return
@@ -115,10 +118,106 @@ func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func wait(op lxd.Operation, err error) error {
+	if err == nil {
+		return op.Wait()
+	}
+	return err
+}
+
+func (t *SnapServer) Create(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Not implemented", 501)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	snapshot := vars["snapshot"]
+
+	var err error
+	server, err := t.Server.GetServer()
+	if err != nil {
+		t.Error(w, err)
+		return
+	}
+
+	container, err := t.findContainerFromAddress(r.RemoteAddr)
+	if err != nil {
+		t.Error(w, err)
+		return
+	}
+	fmt.Println("create", container, snapshot)
+	err = wait(server.DeleteContainerSnapshot(container, snapshot))
+	if err != nil && "not found" != err.Error() {
+		t.Error(w, err)
+		return
+	}
+	post := api.ContainerSnapshotsPost{
+		Name: snapshot,
+	}
+
+	err = wait(server.CreateContainerSnapshot(container, post))
+	if err != nil {
+		t.Error(w, err)
+		return
+	}
+	body := make(map[string]interface{})
+	body["snapshot"] = snapshot
+	err = json.NewEncoder(w).Encode(body)
+	if err != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+}
+
+func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Not implemented", 501)
+		return
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	snapshot := vars["snapshot"]
+
+	var err error
+	server, err := t.Server.GetServer()
+	if err != nil {
+		t.Error(w, err)
+		return
+	}
+
+	container, err := t.findContainerFromAddress(r.RemoteAddr)
+	if err != nil {
+		t.Error(w, err)
+		return
+	}
+	fmt.Println("delete", container, snapshot)
+	err = wait(server.DeleteContainerSnapshot(container, snapshot))
+	if err != nil && "not found" != err.Error() {
+		t.Error(w, err)
+		return
+	}
+	body := make(map[string]interface{})
+	body["snapshot"] = snapshot
+	err = json.NewEncoder(w).Encode(body)
+	if err != nil {
+		http.Error(w, "Internal server error", 500)
+		return
+	}
+}
+
 func (t *SnapServer) Run() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/1.0/id", func(w http.ResponseWriter, r *http.Request) { t.Id(w, r) })
 	r.HandleFunc("/1.0/list", func(w http.ResponseWriter, r *http.Request) { t.List(w, r) })
+	r.HandleFunc("/1.0/create/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Create(w, r) })
+	r.HandleFunc("/1.0/delete/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Delete(w, r) })
 
 	fmt.Println("starting http server at:", t.Addr)
 	err := http.ListenAndServe(t.Addr, r)
