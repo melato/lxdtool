@@ -70,7 +70,8 @@ func (t *SnapServer) start(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (t *SnapServer) handler(method func(*SnapServer, http.ResponseWriter, *http.Request) (map[string]interface{}, error)) func(http.ResponseWriter, *http.Request) {
+func (t *SnapServer) handler(method func(*SnapServer, http.ResponseWriter, *http.Request) (
+	map[string]interface{}, error)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := t.start(w, r)
 		var body map[string]interface{}
@@ -98,39 +99,24 @@ func (t *SnapServer) Id(w http.ResponseWriter, r *http.Request) (map[string]inte
 	return body, err
 }
 
-func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Not implemented", 501)
-		return
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
+func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	server, err := t.Server.GetServer()
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 
 	container, err := t.findContainerFromAddress(r.RemoteAddr)
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	fmt.Println("list", container)
 	snapshots, err := server.GetContainerSnapshotNames(container)
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	body := make(map[string]interface{})
 	body["snapshots"] = snapshots
-	err = json.NewEncoder(w).Encode(body)
-	if err != nil {
-		http.Error(w, "Internal server error", 500)
-		return
-	}
+	return body, nil
 }
 
 func wait(op lxd.Operation, err error) error {
@@ -140,35 +126,24 @@ func wait(op lxd.Operation, err error) error {
 	return err
 }
 
-func (t *SnapServer) Create(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Not implemented", 501)
-		return
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
+func (t *SnapServer) Create(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	vars := mux.Vars(r)
 	snapshot := vars["snapshot"]
 
 	var err error
 	server, err := t.Server.GetServer()
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 
 	container, err := t.findContainerFromAddress(r.RemoteAddr)
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	fmt.Println("create", container, snapshot)
 	err = wait(server.DeleteContainerSnapshot(container, snapshot))
 	if err != nil && "not found" != err.Error() {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	post := api.ContainerSnapshotsPost{
 		Name: snapshot,
@@ -176,63 +151,43 @@ func (t *SnapServer) Create(w http.ResponseWriter, r *http.Request) {
 
 	err = wait(server.CreateContainerSnapshot(container, post))
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	body := make(map[string]interface{})
 	body["snapshot"] = snapshot
-	err = json.NewEncoder(w).Encode(body)
-	if err != nil {
-		http.Error(w, "Internal server error", 500)
-		return
-	}
+	return body, nil
 }
 
-func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Not implemented", 501)
-		return
-	}
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
+func (t *SnapServer) Delete(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	vars := mux.Vars(r)
 	snapshot := vars["snapshot"]
 
 	var err error
 	server, err := t.Server.GetServer()
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 
 	container, err := t.findContainerFromAddress(r.RemoteAddr)
 	if err != nil {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	fmt.Println("delete", container, snapshot)
 	err = wait(server.DeleteContainerSnapshot(container, snapshot))
 	if err != nil && "not found" != err.Error() {
-		t.Error(w, err)
-		return
+		return nil, err
 	}
 	body := make(map[string]interface{})
 	body["snapshot"] = snapshot
-	err = json.NewEncoder(w).Encode(body)
-	if err != nil {
-		http.Error(w, "Internal server error", 500)
-		return
-	}
+	return body, nil
 }
 
 func (t *SnapServer) Run() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/1.0/id", t.handler((*SnapServer).Id))
-	r.HandleFunc("/1.0/list", func(w http.ResponseWriter, r *http.Request) { t.List(w, r) })
-	r.HandleFunc("/1.0/create/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Create(w, r) })
-	r.HandleFunc("/1.0/delete/{snapshot}", func(w http.ResponseWriter, r *http.Request) { t.Delete(w, r) })
+	r.HandleFunc("/1.0/list", t.handler((*SnapServer).List))
+	r.HandleFunc("/1.0/create/{snapshot}", t.handler((*SnapServer).Create))
+	r.HandleFunc("/1.0/delete/{snapshot}", t.handler((*SnapServer).Delete))
 
 	fmt.Println("starting http server at:", t.Addr)
 	err := http.ListenAndServe(t.Addr, r)
