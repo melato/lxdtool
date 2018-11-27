@@ -3,13 +3,25 @@ package proc
 import (
 	"fmt"
 	"io/ioutil"
+	"path"
 	"strconv"
 	"strings"
 )
 
-func Getppid(pid int) (int, error) {
-	stat, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+type Proc struct {
+	Dir string
+}
+
+func NewProc(dir string) *Proc {
+	var proc Proc
+	proc.Dir = dir
+	return &proc
+}
+
+func (t *Proc) Getppid(pid int) (int, error) {
+	stat, err := ioutil.ReadFile(path.Join(t.Dir, strconv.Itoa(pid), "stat"))
 	if err != nil {
+		fmt.Println(err)
 		return 0, err
 	}
 	line := string(stat)

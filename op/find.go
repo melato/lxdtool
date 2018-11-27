@@ -42,7 +42,8 @@ func (t *Tool) FindPid(pmap map[int]string, pid int) error {
 			return nil
 		}
 		var err error
-		p, err = proc.Getppid(p)
+		ps := proc.NewProc(t.ProcDir)
+		p, err = ps.Getppid(p)
 		if err != nil {
 			return err
 		}

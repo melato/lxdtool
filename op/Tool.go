@@ -14,6 +14,7 @@ type Tool struct {
 	ServerSocket string
 	ServerRemote string
 	ConfigDir    string
+	ProcDir      string
 	server       lxd.ContainerServer
 	All          bool
 	Exclude      []string
