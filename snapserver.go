@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/lxc/lxd/client"
 	"github.com/lxc/lxd/shared/api"
 	"github.com/spf13/cobra"
+	"melato.org/lxdtool/common"
 	"melato.org/lxdtool/op"
 )
 
@@ -23,11 +23,6 @@ import (
 type SnapServer struct {
 	Server op.Server
 	Addr   string
-}
-
-type Snapshot struct {
-	Name string
-	Date time.Time
 }
 
 /** Find the container name from its address */
@@ -124,9 +119,9 @@ func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) (map[string]in
 	if err != nil {
 		return nil, err
 	}
-	var list []Snapshot
+	var list []common.Snapshot
 	for _, snapshot := range snapshots {
-		s := Snapshot{snapshot.Name, snapshot.CreationDate}
+		s := common.Snapshot{snapshot.Name, snapshot.CreationDate}
 		list = append(list, s)
 	}
 	body := make(map[string]interface{})

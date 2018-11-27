@@ -10,21 +10,13 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"melato.org/lxdtool/common"
 )
 
 type SnapClient struct {
 	BaseUrl string
 	Delete  bool
 	List    bool
-}
-
-type Snapshot struct {
-	Name string `json:"name"`
-	Date string `json:"date"`
-}
-
-type Result struct {
-	Snapshots []Snapshot `json:"snapshots"`
 }
 
 func (t *SnapClient) list() error {
@@ -39,13 +31,13 @@ func (t *SnapClient) list() error {
 	if err != nil {
 		return err
 	}
-	var result Result
+	var result common.Result
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return err
 	}
 	for _, s := range result.Snapshots {
-		fmt.Println(s.Date, s.Name)
+		fmt.Println(s.Date.Format("2006-01-02 15:04:05"), s.Name)
 	}
 	return nil
 }
