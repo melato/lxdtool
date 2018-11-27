@@ -19,8 +19,12 @@ type SnapClient struct {
 	List    bool
 }
 
+type ClientConfig struct {
+	BaseUrl string `json:"url"`
+}
+
 func (t *SnapClient) list() error {
-	url := t.BaseUrl + "/1.0/list"
+	url := t.BaseUrl + common.LIST
 	client := &http.Client{}
 	r, err := client.Get(url)
 	if err != nil {
@@ -43,7 +47,7 @@ func (t *SnapClient) list() error {
 }
 
 func (t *SnapClient) create(name string) error {
-	url := t.BaseUrl + "/1.0/create/" + name
+	url := t.BaseUrl + common.CREATE + "/" + name
 	client := &http.Client{}
 	r, err := client.Get(url)
 	if err != nil {
@@ -55,7 +59,7 @@ func (t *SnapClient) create(name string) error {
 }
 
 func (t *SnapClient) delete(names []string) error {
-	url := t.BaseUrl + "/1.0/delete/" + strings.Join(names, ",")
+	url := t.BaseUrl + common.DELETE + "/" + strings.Join(names, ",")
 	client := &http.Client{}
 	r, err := client.Get(url)
 	if err != nil {
@@ -66,7 +70,34 @@ func (t *SnapClient) delete(names []string) error {
 	return err
 }
 
+func ReadConfig() (*ClientConfig, error) {
+	var config ClientConfig
+	executable, err := os.Executable()
+	if err != nil {
+		return &config, err
+	}
+	configFile := executable + ".json"
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return &config, err
+	}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return &config, err
+	}
+	return &config, nil
+}
+
 func (t *SnapClient) RunE(args []string) error {
+	if t.BaseUrl == "" {
+		config, err := ReadConfig()
+		if err == nil {
+			t.BaseUrl = config.BaseUrl
+		}
+	}
+	if t.BaseUrl == "" {
+		return errors.New("missing base url")
+	}
 	if t.List {
 		return t.list()
 	} else if t.Delete {
@@ -90,9 +121,20 @@ func (t *SnapClient) Run(args []string) {
 func main() {
 	var client SnapClient
 	var cmd = &cobra.Command{
-		Use:   "snapshot",
-		Short: "create, list, delete snapshots from a container",
-		Run:   func(cmd *cobra.Command, args []string) { client.Run(args) },
+		Use: "snapshot [flags] [snapshot-name]...",
+		Example: `snapshot s1
+snapshot -l
+snapshot -d s1 s2`,
+		Short: "create, list, delete snapshots from inside a container",
+		Long: `This program can be run inside a container to manage its own snapshots.
+It requires a corresponding snapshot server that relays the requests
+to the LXD server.
+
+If run without the -l or -d flags, it creates a snapshot,
+deleting any previous snapshot with the same name.
+
+`,
+		Run: func(cmd *cobra.Command, args []string) { client.Run(args) },
 	}
 	cmd.PersistentFlags().StringVarP(&client.BaseUrl, "url", "u", "", "server url")
 	cmd.PersistentFlags().BoolVarP(&client.Delete, "delete", "d", false, "delete snapshots")
