@@ -31,7 +31,6 @@ func (t *SnapServer) findContainerFromAddress(addr string) (string, error) {
 	fields := strings.Split(addr, ":")
 	ip := fields[0]
 
-	fmt.Println("ip", ip)
 	server, err := t.Server.GetServer()
 	if err != nil {
 		return "", err
@@ -40,9 +39,7 @@ func (t *SnapServer) findContainerFromAddress(addr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("1")
 	for _, container := range containers {
-		fmt.Println(container.Name)
 		if container.IsActive() {
 			state, _, err := server.GetContainerState(container.Name)
 			if err != nil {
@@ -77,7 +74,6 @@ func (t *SnapServer) Id(w http.ResponseWriter, r *http.Request) {
 		t.Error(w, err)
 		return
 	}
-	fmt.Println("body", body)
 	err = json.NewEncoder(w).Encode(body)
 	if err != nil {
 		http.Error(w, "Internal server error", 500)
@@ -124,6 +120,7 @@ func (t *SnapServer) Run() error {
 	r.HandleFunc("/1.0/id", func(w http.ResponseWriter, r *http.Request) { t.Id(w, r) })
 	r.HandleFunc("/1.0/list", func(w http.ResponseWriter, r *http.Request) { t.List(w, r) })
 
+	fmt.Println("starting http server at:", t.Addr)
 	err := http.ListenAndServe(t.Addr, r)
 	if err != nil {
 		return err

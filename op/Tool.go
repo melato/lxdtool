@@ -2,48 +2,21 @@ package op
 
 import (
 	"fmt"
-	"os"
-	"path"
 
 	"github.com/lxc/lxd/client"
-	"github.com/lxc/lxd/lxc/config"
 	"github.com/lxc/lxd/shared/api"
 )
 
 type Tool struct {
-	ServerSocket string
-	ServerRemote string
-	ConfigDir    string
-	ProcDir      string
-	server       lxd.ContainerServer
-	All          bool
-	Exclude      []string
+	Server  Server
+	ProcDir string
+	server  lxd.ContainerServer
+	All     bool
+	Exclude []string
 }
 
 func (t *Tool) GetServer() (lxd.ContainerServer, error) {
-	if t.server == nil {
-		var err error
-		if t.ServerRemote != "" && t.ConfigDir != "" {
-			fmt.Println("using remote: ", t.ServerRemote)
-			fmt.Println("ConfigDir: ", t.ConfigDir)
-			confPath := os.ExpandEnv(path.Join(t.ConfigDir, "config.yml"))
-			conf, err := config.LoadConfig(confPath)
-			if err != nil {
-				return nil, err
-			}
-			t.server, err = conf.GetContainerServer(t.ServerRemote)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			// Connect to LXD over the Unix socket
-			t.server, err = lxd.ConnectLXDUnix(t.ServerSocket, nil)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return t.server, nil
+	return t.Server.GetServer()
 }
 
 func StringSliceDiff(ar []string, exclude []string) []string {

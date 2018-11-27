@@ -44,10 +44,14 @@ func Execute() {
 	}
 }
 
+func ServerFlags(cmd *cobra.Command, server *op.Server) {
+	cmd.PersistentFlags().StringVarP(&server.Socket, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
+	cmd.PersistentFlags().StringVarP(&server.Remote, "remote", "r", "", "LXD remote")
+	cmd.PersistentFlags().StringVarP(&server.ConfigDir, "config", "c", "", "config dir (with client.crt, client.key)")
+}
+
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&tool.ServerSocket, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
-	rootCmd.PersistentFlags().StringVarP(&tool.ServerRemote, "remote", "r", "", "LXD remote")
-	rootCmd.PersistentFlags().StringVarP(&tool.ConfigDir, "config", "c", "", "config dir (with client.crt, client.key)")
+	ServerFlags(rootCmd, &tool.Server)
 	rootCmd.PersistentFlags().StringVar(&tool.ProcDir, "proc", "/proc", "server /proc dir")
 	rootCmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
 	rootCmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
