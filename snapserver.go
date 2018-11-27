@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/lxc/lxd/client"
@@ -22,6 +23,11 @@ import (
 type SnapServer struct {
 	Server op.Server
 	Addr   string
+}
+
+type Snapshot struct {
+	Name string
+	Date time.Time
 }
 
 /** Find the container name from its address */
@@ -110,12 +116,17 @@ func (t *SnapServer) List(w http.ResponseWriter, r *http.Request) (map[string]in
 		return nil, err
 	}
 	fmt.Println("list", container)
-	snapshots, err := server.GetContainerSnapshotNames(container)
+	snapshots, err := server.GetContainerSnapshots(container)
 	if err != nil {
 		return nil, err
 	}
+	var list []Snapshot
+	for _, snapshot := range snapshots {
+		s := Snapshot{snapshot.Name, snapshot.CreationDate}
+		list = append(list, s)
+	}
 	body := make(map[string]interface{})
-	body["snapshots"] = snapshots
+	body["snapshots"] = list
 	return body, nil
 }
 
