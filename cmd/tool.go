@@ -23,36 +23,17 @@ import (
 	"melato.org/lxdtool/op"
 )
 
-var cfgFile string
-var tool op.Tool
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "lxdtool",
-	Short: "Miscellaneous LXD utilities for snapshots, backups, etc.",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
 func ServerFlags(cmd *cobra.Command, server *op.Server) {
 	cmd.PersistentFlags().StringVarP(&server.Socket, "socket", "s", "/var/snap/lxd/common/lxd/unix.socket", "path to unix socket")
 	cmd.PersistentFlags().StringVarP(&server.Remote, "remote", "r", "", "LXD remote")
 	cmd.PersistentFlags().StringVarP(&server.ConfigDir, "config", "c", "", "config dir (with client.crt, client.key)")
 }
 
-func init() {
-	ServerFlags(rootCmd, &tool.Server)
-	rootCmd.PersistentFlags().StringVar(&tool.ProcDir, "proc", "/proc", "server /proc dir")
-	rootCmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
-	rootCmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
-}
+func ToolFlags(cmd *cobra.Command, tool *op.Tool) {
+	ServerFlags(cmd, tool.Server)
+	cmd.PersistentFlags().StringVar(tool.ProcDir, "proc", "/proc", "server /proc dir")
+	cmd.PersistentFlags().BoolVarP(tool.All, "all", "a", false, "use all running containers")
+	cmd.PersistentFlags().StringSliceVarP(tool.Exclude, "exclude", "x", nil, "exclude containers")
+}}
+
+

@@ -14,8 +14,33 @@
 
 package main
 
-import "melato.org/lxdtool/cmd"
+import (
+	"fmt"
+	"os"
+
+	"github.com/spf13/cobra"
+	"melato.org/lxdtool/cmd"
+
+	//"github.com/spf13/viper"
+	"melato.org/lxdtool/op"
+)
+
+var cfgFile string
+var tool op.Tool
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "lxdtool",
+	Short: "Miscellaneous LXD utilities for snapshots, backups, etc.",
+	// Uncomment the following line if your bare application
+	// has an action associated with it:
+	//	Run: func(cmd *cobra.Command, args []string) { },
+}
 
 func main() {
-	cmd.Execute()
+	ToolFlags(rootCmd, &tool)
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

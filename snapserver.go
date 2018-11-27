@@ -76,8 +76,10 @@ func (t *SnapServer) start(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (t *SnapServer) handler(method func(*SnapServer, http.ResponseWriter, *http.Request) (
-	map[string]interface{}, error)) func(http.ResponseWriter, *http.Request) {
+type HandlerMethod func(*SnapServer, http.ResponseWriter, *http.Request) (
+	map[string]interface{}, error)
+
+func (t *SnapServer) handler(method HandlerMethod) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := t.start(w, r)
 		var body map[string]interface{}
