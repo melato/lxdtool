@@ -20,27 +20,6 @@ type Tool struct {
 	Exclude      []string
 }
 
-/*
-func (t *Tool) loadConfigFile(file string) (string, error) {
-	bytes, err := io.ioutil.ReadFile(path.Join(t.ConfigPath, file))
-	if err != nil {
-		return nil, err
-	}
-	return []string(bytes), nil
-}
-			// Connect to LXD over HTTPS
-			var args lxd.ConnectionArgs
-			args.TLSClientCert, err = loadConfigFile("client.crt")
-			if err != nil {
-				return nil, err
-			}
-			args.TLSClientKey, err = loadConfigFile("client.key")
-			if err != nil {
-				return nil, err
-			}
-			t.server, err = lxd.ConnectLXD(t.ServerUrl, t.ServerSocket, nil)
-*/
-
 func (t *Tool) GetServer() (lxd.ContainerServer, error) {
 	if t.server == nil {
 		var err error
