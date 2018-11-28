@@ -11,7 +11,7 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package op
 
 import (
@@ -49,6 +49,7 @@ func (t *Server) GetServer() (lxd.ContainerServer, error) {
 			// Connect to LXD over the Unix socket
 			t.server, err = lxd.ConnectLXDUnix(t.Socket, nil)
 			if err != nil {
+				fmt.Println(t.Socket, err)
 				return nil, err
 			}
 		}
