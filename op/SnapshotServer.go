@@ -11,7 +11,7 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package op
 
 import (
@@ -23,7 +23,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lxc/lxd/shared/api"
-	"melato.org/lxdtool/common"
+	"github.com/melato/lxdtool/common"
 )
 
 /*
@@ -99,8 +99,7 @@ type HandlerFunction func(http.ResponseWriter, *http.Request)
 func (t *SnapshotServer) handler(method HandlerMethod) HandlerFunction {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := t.start(w, r)
-		fields := strings.Split(r.RemoteAddr, ":")
-		ip := fields[0]
+		ip := HostAddress(r.RemoteAddr)
 		container, err := t.findContainerFromIP(ip)
 		var body map[string]interface{}
 		if err == nil {

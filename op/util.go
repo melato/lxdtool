@@ -11,8 +11,22 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package op
+
+import (
+	"strings"
+)
+
+func HostAddress(address string) string {
+	pos := strings.LastIndex(address, ":")
+	if pos >= 0 {
+		return address[0:pos]
+
+	} else {
+		return address
+	}
+}
 
 func StringSliceDiff(ar []string, exclude []string) []string {
 	if exclude == nil {
