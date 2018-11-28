@@ -17,15 +17,25 @@ import (
 */
 
 type SnapshotServer struct {
-	Server *Server
-	Addr   string
+	Server  *Server
+	Addr    string
+	Profile string
+}
+
+func (t *SnapshotServer) HasPermission(container *api.Container) bool {
+	if t.Profile == "" {
+		return true
+	}
+	for _, p := range container.Profiles {
+		if p == t.Profile {
+			return true
+		}
+	}
+	return false
 }
 
 /** Find the container name from its address */
-func (t *SnapshotServer) findContainerFromAddress(addr string) (string, error) {
-	fields := strings.Split(addr, ":")
-	ip := fields[0]
-
+func (t *SnapshotServer) findContainerFromIP(ip string) (string, error) {
 	server, err := t.Server.GetServer()
 	if err != nil {
 		return "", err
@@ -35,7 +45,7 @@ func (t *SnapshotServer) findContainerFromAddress(addr string) (string, error) {
 		return "", err
 	}
 	for _, container := range containers {
-		if container.IsActive() {
+		if container.IsActive() && t.HasPermission(&container) {
 			state, _, err := server.GetContainerState(container.Name)
 			if err != nil {
 				return "", err
@@ -67,7 +77,7 @@ func (t *SnapshotServer) start(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type HandlerMethod func(*SnapshotServer, http.ResponseWriter, *http.Request) (
+type HandlerMethod func(*SnapshotServer, string, http.ResponseWriter, *http.Request) (
 	map[string]interface{}, error)
 
 type HandlerFunction func(http.ResponseWriter, *http.Request)
@@ -75,9 +85,18 @@ type HandlerFunction func(http.ResponseWriter, *http.Request)
 func (t *SnapshotServer) handler(method HandlerMethod) HandlerFunction {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := t.start(w, r)
+		fields := strings.Split(r.RemoteAddr, ":")
+		ip := fields[0]
+		container, err := t.findContainerFromIP(ip)
 		var body map[string]interface{}
 		if err == nil {
-			body, err = method(t, w, r)
+			if container == "" {
+				body = make(map[string]interface{})
+				body["error"] = "not allowed"
+				fmt.Println(ip, "denied")
+			} else {
+				body, err = method(t, container, w, r)
+			}
 		}
 
 		if err == nil {
@@ -92,24 +111,19 @@ func (t *SnapshotServer) handler(method HandlerMethod) HandlerFunction {
 	}
 }
 
-func (t *SnapshotServer) Id(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+func (t *SnapshotServer) Id(container string, w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	body := make(map[string]interface{})
-	var err error
 	body["RemoteAddr"] = r.RemoteAddr
-	body["Name"], err = t.findContainerFromAddress(r.RemoteAddr)
-	return body, err
+	body["Name"] = container
+	return body, nil
 }
 
-func (t *SnapshotServer) List(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+func (t *SnapshotServer) List(container string, w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	server, err := t.Server.GetServer()
 	if err != nil {
 		return nil, err
 	}
-
-	container, err := t.findContainerFromAddress(r.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
+	body := make(map[string]interface{})
 	fmt.Println(container, "list")
 	snapshots, err := server.GetContainerSnapshots(container)
 	if err != nil {
@@ -120,12 +134,11 @@ func (t *SnapshotServer) List(w http.ResponseWriter, r *http.Request) (map[strin
 		s := common.Snapshot{snapshot.Name, snapshot.CreationDate}
 		list = append(list, s)
 	}
-	body := make(map[string]interface{})
 	body["snapshots"] = list
 	return body, nil
 }
 
-func (t *SnapshotServer) Create(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+func (t *SnapshotServer) Create(container string, w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	vars := mux.Vars(r)
 	snapshot := vars["snapshot"]
 
@@ -135,10 +148,6 @@ func (t *SnapshotServer) Create(w http.ResponseWriter, r *http.Request) (map[str
 		return nil, err
 	}
 
-	container, err := t.findContainerFromAddress(r.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
 	fmt.Println(container, "create", snapshot)
 	err = wait(server.DeleteContainerSnapshot(container, snapshot))
 	if err != nil && "not found" != err.Error() {
@@ -157,7 +166,7 @@ func (t *SnapshotServer) Create(w http.ResponseWriter, r *http.Request) (map[str
 	return body, nil
 }
 
-func (t *SnapshotServer) Delete(w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
+func (t *SnapshotServer) Delete(container string, w http.ResponseWriter, r *http.Request) (map[string]interface{}, error) {
 	vars := mux.Vars(r)
 	snapshots := strings.Split(vars["snapshots"], ",")
 	body := make(map[string]interface{})
@@ -169,10 +178,6 @@ func (t *SnapshotServer) Delete(w http.ResponseWriter, r *http.Request) (map[str
 		return nil, err
 	}
 
-	container, err := t.findContainerFromAddress(r.RemoteAddr)
-	if err != nil {
-		return nil, err
-	}
 	for _, snapshot := range snapshots {
 		if snapshot != "" {
 			fmt.Println(container, "delete", snapshot)

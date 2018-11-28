@@ -15,5 +15,6 @@ func SnapshotServerCommand(s *op.Server) *cobra.Command {
 		RunE:  func(cmd *cobra.Command, args []string) error { return server.Run() },
 	}
 	command.PersistentFlags().StringVarP(&server.Addr, "listen", "l", ":8080", "listen address")
+	command.PersistentFlags().StringVarP(&server.Profile, "profile", "p", "", "profile restricting access")
 	return command
 }
