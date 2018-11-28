@@ -66,7 +66,7 @@ func (t *SnapshotServer) findContainerFromIP(ip string) (string, error) {
 			}
 			for _, network := range state.Network {
 				for _, a := range network.Addresses {
-					if ip == a.Address {
+					if a.Scope != "local" && ip == a.Address {
 						return container.Name, nil
 					}
 				}
@@ -183,7 +183,6 @@ func (t *SnapshotServer) Delete(container string, w http.ResponseWriter, r *http
 	vars := mux.Vars(r)
 	snapshots := strings.Split(vars["snapshots"], ",")
 	body := make(map[string]interface{})
-	body["snapshots"] = snapshots
 
 	var err error
 	server, err := t.Server.GetServer()

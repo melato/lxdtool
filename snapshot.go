@@ -38,20 +38,30 @@ type ClientConfig struct {
 	BaseUrl string
 }
 
-func (t *SnapClient) list() error {
-	url := t.BaseUrl + common.LIST
+func (t *SnapClient) CallUrl(url string) (*common.Result, error) {
 	client := &http.Client{}
 	r, err := client.Get(url)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var result common.Result
 	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+	if result.Error != "" {
+		return nil, errors.New(result.Error)
+	}
+	return &result, nil
+}
+
+func (t *SnapClient) list() error {
+	result, err := t.CallUrl(t.BaseUrl + common.LIST)
 	if err != nil {
 		return err
 	}
@@ -62,26 +72,13 @@ func (t *SnapClient) list() error {
 }
 
 func (t *SnapClient) create(name string) error {
-	url := t.BaseUrl + common.CREATE + "/" + name
-	client := &http.Client{}
-	r, err := client.Get(url)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	_, err = ioutil.ReadAll(r.Body)
+	_, err := t.CallUrl(t.BaseUrl + common.CREATE + "/" + name)
 	return err
 }
 
 func (t *SnapClient) delete(names []string) error {
 	url := t.BaseUrl + common.DELETE + "/" + strings.Join(names, ",")
-	client := &http.Client{}
-	r, err := client.Get(url)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	_, err = ioutil.ReadAll(r.Body)
+	_, err := t.CallUrl(url)
 	return err
 }
 
