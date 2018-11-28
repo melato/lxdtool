@@ -19,15 +19,6 @@ import (
 	"melato.org/lxdtool/op"
 )
 
-func SnapCommand(c *op.Snap) *cobra.Command {
-	cmd := &cobra.Command{}
-	cmd.Use = "snap"
-	cmd.Short = "Bulk snapshot operations"
-	cmd.PersistentFlags().StringVarP(&c.Prefix, "prefix", "p", "auto", "snapshot prefix")
-	cmd.PersistentFlags().BoolVarP(&c.DryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
-	return cmd
-}
-
 func CreateCommand(c *op.SnapCreate, opSnap *op.Snap) *cobra.Command {
 	cmd := &cobra.Command{}
 	c.Snap = opSnap
@@ -64,11 +55,14 @@ func DeleteCommand(c *op.SnapDelete, opSnap *op.Snap) *cobra.Command {
 	return cmd
 }
 
-func init() {
+func SnapCommand(tool *op.Tool) *cobra.Command {
 	var snap = &op.Snap{}
-	snap.Tool = &tool
-	var snapCmd = SnapCommand(snap)
-	rootCmd.AddCommand(snapCmd)
+	snap.Tool = tool
+	snapCmd := &cobra.Command{}
+	snapCmd.Use = "snap"
+	snapCmd.Short = "Bulk snapshot operations"
+	snapCmd.PersistentFlags().StringVarP(&snap.Prefix, "prefix", "p", "auto", "snapshot prefix")
+	snapCmd.PersistentFlags().BoolVarP(&snap.DryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
 
 	var snapCreate = &op.SnapCreate{}
 	snapCreate.Snap = snap
@@ -77,4 +71,5 @@ func init() {
 	var snapDelete = &op.SnapDelete{}
 	snapDelete.Snap = snap
 	snapCmd.AddCommand(DeleteCommand(snapDelete, snap))
+	return snapCmd
 }

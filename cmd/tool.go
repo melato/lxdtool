@@ -15,9 +15,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 	//"github.com/spf13/viper"
 	"melato.org/lxdtool/op"
@@ -30,10 +27,8 @@ func ServerFlags(cmd *cobra.Command, server *op.Server) {
 }
 
 func ToolFlags(cmd *cobra.Command, tool *op.Tool) {
-	ServerFlags(cmd, tool.Server)
-	cmd.PersistentFlags().StringVar(tool.ProcDir, "proc", "/proc", "server /proc dir")
-	cmd.PersistentFlags().BoolVarP(tool.All, "all", "a", false, "use all running containers")
-	cmd.PersistentFlags().StringSliceVarP(tool.Exclude, "exclude", "x", nil, "exclude containers")
-}}
-
-
+	ServerFlags(cmd, &tool.Server)
+	cmd.PersistentFlags().StringVar(&tool.ProcDir, "proc", "/proc", "server /proc dir")
+	cmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
+	cmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
+}

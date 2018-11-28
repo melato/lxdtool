@@ -22,7 +22,7 @@ import (
 
 var testFlag string
 
-func init() {
+func TestCommand() *cobra.Command {
 	var testCmd = &cobra.Command{
 		Use:   "test",
 		Short: "Test cobra",
@@ -31,5 +31,5 @@ func init() {
 		},
 	}
 	testCmd.PersistentFlags().StringVar(&testFlag, "test", "test me", "example conf")
-	rootCmd.AddCommand(testCmd)
+	return testCmd
 }

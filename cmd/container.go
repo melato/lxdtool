@@ -16,19 +16,21 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"melato.org/lxdtool/op"
 )
 
-func ContainerCommand() *cobra.Command {
-	cmd := &cobra.Command{}
-	cmd.Use = "container"
-	cmd.Short = "List containers"
-	cmd.Run = func(cmd *cobra.Command, args []string) {
+func ContainerCommand1(tool *op.Tool) *cobra.Command {
+	containerCmd := &cobra.Command{}
+	containerCmd.Use = "container"
+	containerCmd.Short = "List containers"
+	containerCmd.Run = func(cmd *cobra.Command, args []string) {
 		tool.ListContainers(args)
 	}
-	return cmd
+
+	return containerCmd
 }
 
-func ListCommand() *cobra.Command {
+func ListCommand(tool *op.Tool) *cobra.Command {
 	listCmd := &cobra.Command{}
 	listCmd.Use = "list"
 	listCmd.Run = func(cmd *cobra.Command, args []string) {
@@ -37,14 +39,14 @@ func ListCommand() *cobra.Command {
 	return listCmd
 }
 
-func init() {
+func ContainerCommand(tool *op.Tool) *cobra.Command {
 	containerCmd := &cobra.Command{}
 	containerCmd.Use = "container"
-	rootCmd.AddCommand(containerCmd)
+	//rootCmd.AddCommand(containerCmd)
 
-	listCmd := ListCommand()
+	listCmd := ListCommand(tool)
 	containerCmd.AddCommand(listCmd)
-	rootCmd.AddCommand(listCmd)
+	//rootCmd.AddCommand(listCmd)
 
 	profilesCmd := &cobra.Command{}
 	profilesCmd.Use = "profiles"
@@ -80,5 +82,5 @@ func init() {
 		tool.FindPids(args)
 	}
 	containerCmd.AddCommand(findCmd)
-
+	return containerCmd
 }

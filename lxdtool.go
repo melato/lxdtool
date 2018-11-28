@@ -25,20 +25,23 @@ import (
 	"melato.org/lxdtool/op"
 )
 
-var cfgFile string
-var tool op.Tool
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "lxdtool",
-	Short: "Miscellaneous LXD utilities for snapshots, backups, etc.",
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
-}
-
 func main() {
-	ToolFlags(rootCmd, &tool)
+	var tool op.Tool
+	// rootCmd represents the base command when called without any subcommands
+	var rootCmd = &cobra.Command{
+		Use:   "lxdtool",
+		Short: "Miscellaneous LXD utilities for snapshots, backups, etc.",
+		// Uncomment the following line if your bare application
+		// has an action associated with it:
+		//	Run: func(cmd *cobra.Command, args []string) { },
+	}
+
+	cmd.ToolFlags(rootCmd, &tool)
+	rootCmd.AddCommand(cmd.ContainerCommand(&tool))
+	rootCmd.AddCommand(cmd.ProfileCommand(&tool))
+	rootCmd.AddCommand(cmd.SnapCommand(&tool))
+	rootCmd.AddCommand(cmd.SnapshotServerCommand(&tool.Server))
+	rootCmd.AddCommand(cmd.TestCommand())
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
