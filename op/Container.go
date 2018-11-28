@@ -11,10 +11,11 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package op
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lxc/lxd/shared/api"
@@ -46,8 +47,15 @@ func (t *ContainerOps) ListContainers(args []string) error {
 	return nil
 }
 
+func GetContainerName(args []string) (string, error) {
+	if len(args) == 1 {
+		return args[0], nil
+	}
+	return "", errors.New("please specify one container")
+}
+
 func (t *ContainerOps) ListContainerProfiles(args []string) error {
-	containers, err := t.GetContainerNames(args)
+	name, err := GetContainerName(args)
 	if err != nil {
 		return err
 	}
@@ -55,14 +63,12 @@ func (t *ContainerOps) ListContainerProfiles(args []string) error {
 	if err != nil {
 		return err
 	}
-	for _, name := range containers {
-		t, _, err := server.GetContainer(name)
-		if err != nil {
-			return err
-		}
-		for _, profile := range t.Profiles {
-			fmt.Println(name, profile)
-		}
+	c, _, err := server.GetContainer(name)
+	if err != nil {
+		return err
+	}
+	for _, profile := range c.Profiles {
+		fmt.Println(profile)
 	}
 	return nil
 }
