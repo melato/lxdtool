@@ -11,7 +11,7 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package cmd
 
 import (
@@ -21,27 +21,27 @@ import (
 	"melato.org/lxdtool/op"
 )
 
-func profileExportCommand(c *op.ProfileExport) *cobra.Command {
+func profileExportCommand(t *op.ProfileExport) *cobra.Command {
 	cmd := &cobra.Command{}
-	cmd.Use = "export"
+	cmd.Use = "export [flags] [profile] ..."
 	cmd.Short = "Export profiles"
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return c.Run(args)
+		return t.Run(args)
 	}
-	cmd.PersistentFlags().StringVarP(&c.Dir, "dir", "d", "", "export directory")
-	cmd.PersistentFlags().BoolVarP(&c.All, "all", "a", false, "export all profiles")
-	cmd.PersistentFlags().StringVarP(&c.File, "file", "f", "", "container-profile csv file")
-	cmd.PersistentFlags().BoolVarP(&c.IncludeUsedBy, "used-by", "u", false, "include used-by")
+	cmd.PersistentFlags().StringVarP(&t.Dir, "dir", "d", "", "export directory")
+	cmd.PersistentFlags().BoolVarP(&t.All, "all", "a", false, "export all profiles")
+	cmd.PersistentFlags().StringVarP(&t.File, "file", "f", "", "container-profile csv file")
 	return cmd
 }
 
-func profileImportCommand(tool *op.Tool) *cobra.Command {
+func profileImportCommand(t *op.ProfileImport) *cobra.Command {
 	cmd := &cobra.Command{}
-	cmd.Use = "import"
+	cmd.Use = "import [flags] [profile-file] ..."
 	cmd.Short = "Create or Update profiles"
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		return op.ImportProfiles(tool, args)
+		return t.ImportProfiles(args)
 	}
+	cmd.PersistentFlags().BoolVarP(&t.Update, "update", "u", false, "update existing profiles")
 	return cmd
 }
 
@@ -66,6 +66,8 @@ func ProfileCommand(tool *op.Tool) *cobra.Command {
 	var opExport = &op.ProfileExport{}
 	opExport.Tool = tool
 	profileCmd.AddCommand(profileExportCommand(opExport))
-	profileCmd.AddCommand(profileImportCommand(tool))
+	var opImport = &op.ProfileImport{}
+	opImport.Tool = tool
+	profileCmd.AddCommand(profileImportCommand(opImport))
 	return profileCmd
 }

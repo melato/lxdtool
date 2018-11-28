@@ -11,47 +11,25 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package op
 
 import (
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 
 	"github.com/lxc/lxd/client"
-	"github.com/lxc/lxd/shared/api"
 	"gopkg.in/yaml.v2"
 )
 
-type Profile struct {
-	Tool *Tool
-}
-
-func (p *Profile) List() error {
-	server, err := p.Tool.GetServer()
-	if err != nil {
-		return err
-	}
-	names, err := server.GetProfileNames()
-	if err != nil {
-		return err
-	}
-	for _, name := range names {
-		fmt.Println(name)
-	}
-	return nil
-}
-
 type ProfileExport struct {
-	Tool          *Tool
-	File          string
-	Dir           string
-	All           bool
-	IncludeUsedBy bool
+	Tool *Tool
+	File string
+	Dir  string
+	All  bool
 }
 
 func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) error {
@@ -60,9 +38,8 @@ func (c *ProfileExport) ExportProfile(server lxd.ContainerServer, name string) e
 		return err
 	}
 
-	if !c.IncludeUsedBy {
-		profile.UsedBy = nil
-	}
+	// remove the UsedBy info
+	profile.UsedBy = nil
 	data, err := yaml.Marshal(&profile)
 	if err != nil {
 		return err
@@ -133,58 +110,6 @@ func (c *ProfileExport) Run(names []string) error {
 	err := c.ExportProfiles(names)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-func ProfileExists(server lxd.ContainerServer, name string) (bool, error) {
-	names, err := server.GetProfileNames()
-	if err != nil {
-		return false, err
-	}
-	for _, profile := range names {
-		if profile == name {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-func ImportProfile(tool *Tool, file string) error {
-	server, err := tool.GetServer()
-	if err != nil {
-		return err
-	}
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	var profile = api.Profile{}
-	err = yaml.Unmarshal(data, &profile)
-	if err != nil {
-		return err
-	}
-	name := profile.Name
-	exists, err := ProfileExists(server, name)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return server.UpdateProfile(profile.Name, profile.ProfilePut, "")
-	} else {
-		var post api.ProfilesPost
-		post.ProfilePut = profile.ProfilePut
-		post.Name = name
-		return server.CreateProfile(post)
-	}
-}
-
-func ImportProfiles(tool *Tool, files []string) error {
-	for _, file := range files {
-		err := ImportProfile(tool, file)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
