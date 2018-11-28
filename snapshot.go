@@ -11,7 +11,7 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package main
 
 import (
@@ -23,8 +23,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/melato/lxdtool/common"
 	"github.com/spf13/cobra"
-	"melato.org/lxdtool/common"
+	"github.com/spf13/viper"
 )
 
 type SnapClient struct {
@@ -34,7 +35,7 @@ type SnapClient struct {
 }
 
 type ClientConfig struct {
-	BaseUrl string `json:"url"`
+	BaseUrl string
 }
 
 func (t *SnapClient) list() error {
@@ -85,20 +86,20 @@ func (t *SnapClient) delete(names []string) error {
 }
 
 func ReadConfig() (*ClientConfig, error) {
-	var config ClientConfig
 	executable, err := os.Executable()
 	if err != nil {
-		return &config, err
+		return nil, err
 	}
-	configFile := executable + ".json"
-	data, err := ioutil.ReadFile(configFile)
+	configFile := executable + ".yml"
+
+	viper.SetConfigFile(configFile)
+	err = viper.ReadInConfig() // Find and read the config file
 	if err != nil {
-		return &config, err
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	err = json.Unmarshal(data, &config)
-	if err != nil {
-		return &config, err
-	}
+	var config ClientConfig
+	config.BaseUrl = viper.GetString("url")
 	return &config, nil
 }
 

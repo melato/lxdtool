@@ -11,18 +11,16 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package main
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/melato/lxdtool/cmd"
+	"github.com/melato/lxdtool/op"
 	"github.com/spf13/cobra"
-	"melato.org/lxdtool/cmd"
-
-	//"github.com/spf13/viper"
-	"melato.org/lxdtool/op"
 )
 
 func main() {

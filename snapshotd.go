@@ -11,14 +11,14 @@
 *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 *  See the License for the specific language governing permissions and
 *  limitations under the License.
-*/
+ */
 package main
 
 import (
 	"os"
 
-	"melato.org/lxdtool/cmd"
-	"melato.org/lxdtool/op"
+	"github.com/melato/lxdtool/cmd"
+	"github.com/melato/lxdtool/op"
 )
 
 func main() {

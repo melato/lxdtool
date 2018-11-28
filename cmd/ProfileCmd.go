@@ -17,8 +17,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/melato/lxdtool/op"
 	"github.com/spf13/cobra"
-	"melato.org/lxdtool/op"
 )
 
 func profileExportCommand(t *op.ProfileExport) *cobra.Command {
