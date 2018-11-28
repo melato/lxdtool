@@ -25,10 +25,3 @@ func ServerFlags(cmd *cobra.Command, server *op.Server) {
 	cmd.PersistentFlags().StringVarP(&server.Remote, "remote", "r", "", "LXD remote")
 	cmd.PersistentFlags().StringVarP(&server.ConfigDir, "config", "c", "", "config dir (with client.crt, client.key)")
 }
-
-func ToolFlags(cmd *cobra.Command, tool *op.Tool) {
-	ServerFlags(cmd, &tool.Server)
-	cmd.PersistentFlags().StringVar(&tool.ProcDir, "proc", "/proc", "server /proc dir")
-	cmd.PersistentFlags().BoolVarP(&tool.All, "all", "a", false, "use all running containers")
-	cmd.PersistentFlags().StringSliceVarP(&tool.Exclude, "exclude", "x", nil, "exclude containers")
-}

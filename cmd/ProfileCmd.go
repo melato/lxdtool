@@ -47,7 +47,6 @@ func profileImportCommand(tool *op.Tool) *cobra.Command {
 
 func ProfileCommand(tool *op.Tool) *cobra.Command {
 	var opProfile = op.Profile{tool}
-	// profileCmd represents the profile command
 	var profileCmd = &cobra.Command{
 		Use:   "profile",
 		Short: "profile export, etc.",

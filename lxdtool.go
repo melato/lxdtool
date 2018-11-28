@@ -36,7 +36,7 @@ func main() {
 		//	Run: func(cmd *cobra.Command, args []string) { },
 	}
 
-	cmd.ToolFlags(rootCmd, &tool)
+	cmd.ServerFlags(rootCmd, &tool.Server)
 	rootCmd.AddCommand(cmd.ContainerCommand(&tool))
 	rootCmd.AddCommand(cmd.ProfileCommand(&tool))
 	rootCmd.AddCommand(cmd.SnapCommand(&tool))

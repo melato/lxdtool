@@ -41,3 +41,25 @@ func (t *Server) GetServer() (lxd.ContainerServer, error) {
 	}
 	return t.server, nil
 }
+
+func (t *Server) GetContainerNames(opt *ContainerOptions, args []string) ([]string, error) {
+	var names []string
+	if opt.All {
+		server, err := t.GetServer()
+		if err != nil {
+			return nil, err
+		}
+		containers, err := server.GetContainers()
+		if err != nil {
+			return nil, err
+		}
+		for _, container := range containers {
+			if container.IsActive() {
+				names = append(names, container.Name)
+			}
+		}
+	} else {
+		names = args
+	}
+	return StringSliceDiff(names, opt.Exclude), nil
+}

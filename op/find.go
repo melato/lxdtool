@@ -8,7 +8,7 @@ import (
 	"melato.org/lxdtool/proc"
 )
 
-func (c *Tool) GetPidMap() (map[int]string, error) {
+func (c *Server) GetPidMap() (map[int]string, error) {
 	pmap := make(map[int]string)
 	server, err := c.GetServer()
 	if err != nil {
@@ -30,7 +30,7 @@ func (c *Tool) GetPidMap() (map[int]string, error) {
 	return pmap, nil
 }
 
-func (t *Tool) FindPid(pmap map[int]string, pid int) error {
+func (t *Server) FindPid(ProcDir string, pmap map[int]string, pid int) error {
 	p := pid
 	for {
 		if p == 1 {
@@ -42,7 +42,7 @@ func (t *Tool) FindPid(pmap map[int]string, pid int) error {
 			return nil
 		}
 		var err error
-		ps := proc.NewProc(t.ProcDir)
+		ps := proc.NewProc(ProcDir)
 		p, err = ps.Getppid(p)
 		if err != nil {
 			return err
@@ -57,7 +57,7 @@ func (t *Tool) FindPid(pmap map[int]string, pid int) error {
 	return nil
 }
 
-func (t *Tool) FindPids(args []string) error {
+func (t *Server) FindPids(ProcDir string, args []string) error {
 	pmap, err := t.GetPidMap()
 	if err != nil {
 		return err
@@ -65,7 +65,7 @@ func (t *Tool) FindPids(args []string) error {
 	for _, s := range args {
 		pid, err := strconv.Atoi(s)
 		if err == nil {
-			t.FindPid(pmap, pid)
+			t.FindPid(ProcDir, pmap, pid)
 		} else {
 			fmt.Println("not an int: " + s)
 		}
