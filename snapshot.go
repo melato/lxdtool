@@ -132,20 +132,6 @@ to the LXD server.
 
 If run without the -l or -d flags, it creates a snapshot,
 deleting any previous snapshot with the same name.
-
-SECURITY WARNINGS:
-- The only authentication is the client's ip address.
-  That's how the server identifies the container that makes a request.
-- The communication with the snapshot server is through HTTP.
-
-ENHANCEMENTS:
-- There could be a restore option, which would reboot the container
-  to a snapshot.
-- The snapshot server should have access configuration,
-  so that only certain containers can use these facilities.
-- There should be authorization provided through some sort of access token,
-  so that untrusted processes/users in the container should not be able to
-  alter its snapshots.
 `,
 		Run: func(cmd *cobra.Command, args []string) { client.Run(args) },
 	}
