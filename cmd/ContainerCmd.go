@@ -19,17 +19,6 @@ import (
 	"melato.org/lxdtool/op"
 )
 
-func ContainerCommand1(tool *op.Tool) *cobra.Command {
-	containerCmd := &cobra.Command{}
-	containerCmd.Use = "container"
-	containerCmd.Short = "List containers"
-	containerCmd.Run = func(cmd *cobra.Command, args []string) {
-		tool.ListContainers(args)
-	}
-
-	return containerCmd
-}
-
 func ListCommand(tool *op.Tool) *cobra.Command {
 	listCmd := &cobra.Command{}
 	listCmd.Use = "list"
