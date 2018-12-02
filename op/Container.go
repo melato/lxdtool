@@ -23,6 +23,8 @@ import (
 
 type ContainerOptions struct {
 	All     bool
+	Running bool
+	Profile string
 	Exclude []string
 	ProcDir string
 }

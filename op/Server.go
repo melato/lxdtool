@@ -21,6 +21,7 @@ import (
 
 	"github.com/lxc/lxd/client"
 	"github.com/lxc/lxd/lxc/config"
+	"github.com/lxc/lxd/shared/api"
 )
 
 type Server struct {
@@ -57,9 +58,31 @@ func (t *Server) GetServer() (lxd.ContainerServer, error) {
 	return t.server, nil
 }
 
+func HasProfile(container *api.Container, profile string) bool {
+	for _, p := range container.Profiles {
+		if p == profile {
+			return true
+		}
+	}
+	return false
+}
+
+func (t *Server) isSelected(opt *ContainerOptions, container *api.Container) bool {
+	if opt.Running && !container.IsActive() {
+		return false
+	}
+	if opt.Profile != "" {
+		return HasProfile(container, opt.Profile)
+	}
+	if opt.All {
+		return true
+	}
+	return false
+}
+
 func (t *Server) GetContainerNames(opt *ContainerOptions, args []string) ([]string, error) {
 	var names []string
-	if opt.All {
+	if opt.All || opt.Running || (opt.Profile != "") {
 		server, err := t.GetServer()
 		if err != nil {
 			return nil, err
@@ -69,7 +92,7 @@ func (t *Server) GetContainerNames(opt *ContainerOptions, args []string) ([]stri
 			return nil, err
 		}
 		for _, container := range containers {
-			if container.IsActive() {
+			if t.isSelected(opt, &container) {
 				names = append(names, container.Name)
 			}
 		}
