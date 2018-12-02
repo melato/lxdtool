@@ -45,22 +45,26 @@ func (c *Server) GetPidMap() (map[int]string, error) {
 }
 
 func (t *Server) FindPid(ProcDir string, pmap map[int]string, pid int) error {
+	ps := proc.NewProc(ProcDir)
 	p := pid
+	var stat *proc.Stat
 	for {
 		if p == 1 {
 			return nil
 		}
-		name, ok := pmap[p]
-		if ok {
-			fmt.Println(pid, name)
-			return nil
-		}
-		var err error
-		ps := proc.NewProc(ProcDir)
-		p, err = ps.Getppid(p)
+		s, err := ps.GetStat(p)
 		if err != nil {
 			return err
 		}
+		if p == pid {
+			stat = s
+		}
+		name, ok := pmap[p]
+		if ok {
+			fmt.Println(pid, name, stat.Name)
+			return nil
+		}
+		p = s.Ppid
 	}
 	proc, err := os.FindProcess(pid)
 	if err != nil {

@@ -49,31 +49,31 @@ func (t *SnapshotServer) HasPermission(container *api.Container) bool {
 }
 
 /** Find the container name from its address */
-func (t *SnapshotServer) findContainerFromIP(ip string) (string, error) {
+func (t *SnapshotServer) findContainerFromIP(ip string) (*api.Container, error) {
 	server, err := t.Server.GetServer()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	containers, err := server.GetContainers()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for _, container := range containers {
-		if container.IsActive() && t.HasPermission(&container) {
+		if container.IsActive() {
 			state, _, err := server.GetContainerState(container.Name)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
 			for _, network := range state.Network {
 				for _, a := range network.Addresses {
 					if a.Scope != "local" && ip == a.Address {
-						return container.Name, nil
+						return &container, nil
 					}
 				}
 			}
 		}
 	}
-	return "", nil
+	return nil, nil
 }
 
 func (t *SnapshotServer) Error(w http.ResponseWriter, err error) {
@@ -101,14 +101,18 @@ func (t *SnapshotServer) handler(method HandlerMethod) HandlerFunction {
 		err := t.start(w, r)
 		ip := HostAddress(r.RemoteAddr)
 		container, err := t.findContainerFromIP(ip)
-		var body map[string]interface{}
+		body := make(map[string]interface{})
 		if err == nil {
-			if container == "" {
-				body = make(map[string]interface{})
-				body["error"] = "not allowed"
-				fmt.Println(ip, "denied")
+			if container != nil {
+				if t.HasPermission(container) {
+					body, err = method(t, container.Name, w, r)
+				} else {
+					body["error"] = "not allowed"
+					fmt.Println(ip, "denied")
+				}
 			} else {
-				body, err = method(t, container, w, r)
+				body["error"] = "not container"
+				fmt.Println(ip, "not container")
 			}
 		}
 

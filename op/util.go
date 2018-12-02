@@ -21,8 +21,11 @@ import (
 func HostAddress(address string) string {
 	pos := strings.LastIndex(address, ":")
 	if pos >= 0 {
-		return address[0:pos]
-
+		if pos >= 2 && address[0] == '[' && address[pos-1] == ']' {
+			return address[1 : pos-1]
+		} else {
+			return address[0:pos]
+		}
 	} else {
 		return address
 	}

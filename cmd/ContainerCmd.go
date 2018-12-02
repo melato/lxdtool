@@ -78,6 +78,7 @@ func ContainerCommand(tool *op.Tool) *cobra.Command {
 	findCmd.Run = func(cmd *cobra.Command, args []string) {
 		c.Tool.Server.FindPids(c.ContainerOptions.ProcDir, args)
 	}
+	findCmd.Aliases = []string{"ps"}
 	containerCmd.AddCommand(findCmd)
 	return containerCmd
 }
