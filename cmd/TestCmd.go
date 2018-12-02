@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,9 @@ func TestCommand() *cobra.Command {
 		Short: "Test cobra",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(len(testFlag), testFlag)
+			for _, p := range testFlag {
+				fmt.Println(os.ExpandEnv(p))
+			}
 		},
 	}
 	testCmd.PersistentFlags().StringSliceVar(&testFlag, "test", nil, "example conf")

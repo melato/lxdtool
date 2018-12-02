@@ -17,7 +17,6 @@ package op
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/lxc/lxd/client"
 	"github.com/lxc/lxd/lxc/config"
@@ -25,20 +24,20 @@ import (
 )
 
 type Server struct {
-	Socket    string
-	Remote    string
-	ConfigDir string
-	server    lxd.ContainerServer
+	Socket     string
+	Remote     string
+	ConfigFile string
+	server     lxd.ContainerServer
 }
 
 func (t *Server) GetServer() (lxd.ContainerServer, error) {
 	if t.server == nil {
 		var err error
-		if t.Remote != "" && t.ConfigDir != "" {
+		if t.Remote != "" && t.ConfigFile != "" {
 			fmt.Println("using remote: ", t.Remote)
-			fmt.Println("ConfigDir: ", t.ConfigDir)
-			confPath := os.ExpandEnv(path.Join(t.ConfigDir, "config.yml"))
-			conf, err := config.LoadConfig(confPath)
+			configFile := os.ExpandEnv(t.ConfigFile)
+			fmt.Println("ConfigFile: ", configFile)
+			conf, err := config.LoadConfig(configFile)
 			if err != nil {
 				return nil, err
 			}
