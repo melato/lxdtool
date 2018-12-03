@@ -10,8 +10,8 @@ import (
 func ContainerFlags(cmd *cobra.Command, c *op.ContainerOptions) {
 	cmd.PersistentFlags().BoolVarP(&c.All, "all", "a", false, "use all containers")
 	cmd.PersistentFlags().BoolVarP(&c.Running, "running", "r", false, "use only running containers")
-	cmd.PersistentFlags().StringVarP(&c.Profile, "profile", "p", "", "use containers that have a profile")
-	cmd.PersistentFlags().StringSliceVarP(&c.Exclude, "exclude", "x", nil, "exclude containers")
+	cmd.PersistentFlags().StringVarP(&c.Profile, "profile", "p", "", "use containers that have this profile")
+	cmd.PersistentFlags().StringSliceVarP(&c.Exclude, "exclude", "x", nil, "exclude containers by name")
 }
 
 func ListCommand(c *op.ContainerOps) *cobra.Command {

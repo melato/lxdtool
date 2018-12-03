@@ -10,3 +10,22 @@ They can be run on an LXD host, or in LXD containers that have access to the lxd
 - snapshot:
     - a snapshot client to the snapshot server.  It can be run from inside any container to create/delete/list its own snapshots
 
+## Examples:
+- crontab lines for hourly, daily, and weekly snapshots, two each:
+```
+58 * * * * lxdtool snap create --all --running --period 1h --count 2 --name auto_hour
+05 02 * * * lxdtool snap create -ar --period 1d --count 2 --name auto_day
+10 02 * * 0 lxdtool snap create -ar --period 7d --count 2 --name auto_week
+```
+
+- export all profiles to directory x:
+
+`lxdtool profile export -a -d x`
+
+- import profiles from files "a", "b"
+
+`lxdtool profile import a b`
+
+- run a snapshot server on port 8080 that allows all containers with the "snapshot" profile to connect via the snapshot command and create/delete/list snapshots of themselves:
+
+`lxdtool -s <path-to-lxd-socket> snapshot-server -p snapshot -l :8080`

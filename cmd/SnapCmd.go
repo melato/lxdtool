@@ -20,9 +20,9 @@ there would be {count} different snapshots.
 Any previous snapshot with the same name is deleted.
 The command is meant to be run periodically, at the same frequency as specified in the {period}.`
 	cmd.Example = `lxdtool snap create my-container
-lxdtool snap create -a --period 1h --count 24 --prefix auto_hour
-lxdtool snap create -a --period 1d --count 7 --prefix auto_day
-lxdtool snap create -a --period 7d --count 4 --prefix auto_week`
+lxdtool snap create --all --running --period 1h --count 2 --name auto_hour
+lxdtool snap create --all --running --period 1d --count 2 --name auto_day
+lxdtool snap create --all --running --period 7d --count 2 --name auto_week`
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return c.Run(args)
 	}
