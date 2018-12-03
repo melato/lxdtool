@@ -39,7 +39,6 @@ func main() {
 	rootCmd.AddCommand(cmd.ProfileCommand(&tool))
 	rootCmd.AddCommand(cmd.SnapCommand(&tool))
 	rootCmd.AddCommand(cmd.SnapshotServerCommand(&tool.Server))
-	rootCmd.AddCommand(cmd.TestCommand())
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
