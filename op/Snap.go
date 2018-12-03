@@ -1,6 +1,5 @@
-/* SPDX-License-Identifier: Apache-2.0
-*  Copyright 2018 Alex Athanasopoulos
-*/
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2018 Alex Athanasopoulos
 package op
 
 import (
@@ -70,7 +69,6 @@ func parsePeriod(period string) (int, error) {
 }
 
 func (c *SnapCreate) Run(args []string) error {
-	fmt.Println("snap create")
 	server, err := c.Snap.Tool.GetServer()
 	if err != nil {
 		return err
@@ -133,7 +131,7 @@ func (c *SnapDelete) Run(args []string) error {
 		}
 		for _, snap := range snapshots {
 			if strings.HasPrefix(snap, c.Snap.Prefix) {
-				fmt.Println(name + "/" + snap)
+				fmt.Println("D", name+"/"+snap)
 				if !c.Snap.DryRun {
 					err := wait(server.DeleteContainerSnapshot(name, snap))
 					if err != nil {

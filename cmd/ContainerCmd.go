@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
 *  Copyright 2018 Alex Athanasopoulos
-*/
+ */
 package cmd
 
 import (
@@ -9,7 +9,6 @@ import (
 )
 
 func ContainerFlags(cmd *cobra.Command, c *op.ContainerOptions) {
-	cmd.PersistentFlags().StringVar(&c.ProcDir, "proc", "/proc", "server /proc dir")
 	cmd.PersistentFlags().BoolVarP(&c.All, "all", "a", false, "use all containers")
 	cmd.PersistentFlags().BoolVarP(&c.Running, "running", "r", false, "use only running containers")
 	cmd.PersistentFlags().StringVarP(&c.Profile, "profile", "p", "", "use containers that have a profile")
@@ -70,6 +69,7 @@ func ContainerCommand(tool *op.Tool) *cobra.Command {
 		c.Tool.Server.FindPids(c.ContainerOptions.ProcDir, args)
 	}
 	findCmd.Aliases = []string{"ps"}
+	findCmd.PersistentFlags().StringVar(&c.ProcDir, "proc", "/proc", "server /proc dir")
 	containerCmd.AddCommand(findCmd)
 	return containerCmd
 }

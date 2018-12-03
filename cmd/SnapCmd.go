@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
 *  Copyright 2018 Alex Athanasopoulos
-*/
+ */
 package cmd
 
 import (
@@ -50,7 +50,8 @@ func SnapCommand(tool *op.Tool) *cobra.Command {
 	snapCmd := &cobra.Command{}
 	snapCmd.Use = "snap"
 	snapCmd.Short = "Bulk snapshot operations"
-	snapCmd.PersistentFlags().StringVarP(&snap.Prefix, "prefix", "p", "auto", "snapshot prefix")
+	ContainerFlags(snapCmd, &snap.ContainerOptions)
+	snapCmd.PersistentFlags().StringVar(&snap.Prefix, "name", "auto", "snapshot name or prefix")
 	snapCmd.PersistentFlags().BoolVarP(&snap.DryRun, "dry-run", "t", false, "dry-run don't touch a	return cmd")
 
 	var snapCreate = &op.SnapCreate{}

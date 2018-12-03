@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
 *  Copyright 2018 Alex Athanasopoulos
-*/
+ */
 package op
 
 import (
@@ -15,7 +15,8 @@ type ContainerOptions struct {
 	Running bool
 	Profile string
 	Exclude []string
-	ProcDir string
+
+	ProcDir string // used by find cmd
 }
 
 type ContainerOps struct {
