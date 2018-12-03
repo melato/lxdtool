@@ -1,6 +1,5 @@
-/* SPDX-License-Identifier: Apache-2.0
-*  Copyright 2018 Alex Athanasopoulos
- */
+// SPDX-License-Identifier: Apache-2.0
+// Copyright 2018 Alex Athanasopoulos
 package cmd
 
 import (
