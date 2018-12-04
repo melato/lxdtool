@@ -27,6 +27,14 @@ func main() {
 	rootCmd.AddCommand(cmd.ProfileCommand(&tool))
 	rootCmd.AddCommand(cmd.SnapCommand(&tool))
 	rootCmd.AddCommand(cmd.SnapshotServerCommand(&tool.Server))
+
+	versionCmd := &cobra.Command{
+		Use: "version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(op.Version)
+		},
+	}
+	rootCmd.AddCommand(versionCmd)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
